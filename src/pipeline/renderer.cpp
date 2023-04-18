@@ -22,7 +22,7 @@ using namespace SCN;
 
 //some globals
 GFX::Mesh sphere;
-std::vector<RenderCall*> render_calls;
+std::vector<RenderCall> render_calls;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -65,6 +65,8 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	if(skybox_cubemap)
 		renderSkybox(skybox_cubemap);
 
+	//first of all clear the render calls vector
+	render_calls.clear();
 	//STORE DRAW CALLS IN VECTOR RENDER_CALLS
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
@@ -82,12 +84,12 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	}
 
 	//ORDER RENDER CALLS BY DISTANCE TO CAMERA
-	std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall* a, const RenderCall* b) {return(a->distance_2_camera > b->distance_2_camera); });
+	std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
 	//render entities
 	for (int i = 0; i < render_calls.size(); ++i)
 	{
-		RenderCall* rc = render_calls[i];
-		renderByDistance( rc );
+		RenderCall rc = render_calls[i];
+		renderByDistance( &rc );
 	}
 }
 
@@ -270,7 +272,7 @@ void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
 			rc.model = node_model;
 			rc.distance_2_camera = camera->eye.distance(nodepos);
 
-			render_calls.push_back(&rc);
+			render_calls.push_back(rc);
 		}
 	}
 

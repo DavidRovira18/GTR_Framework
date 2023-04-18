@@ -28,6 +28,11 @@ namespace SCN {
 		float distance_2_camera;
 	};
 
+	enum eRenderPriority {
+		NOPRIORITY,
+		DISTANCE2CAMERA
+	};
+
 	// This class is in charge of rendering anything in our system.
 	// Separating the render from anything else makes the code cleaner
 	class Renderer

@@ -23,6 +23,7 @@ using namespace SCN;
 //some globals
 GFX::Mesh sphere;
 std::vector<RenderCall> render_calls;
+eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -64,32 +65,52 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	//render skybox
 	if(skybox_cubemap)
 		renderSkybox(skybox_cubemap);
-
-	//first of all clear the render calls vector
-	render_calls.clear();
-	//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-	for (int i = 0; i < scene->entities.size(); ++i)
+	if (current_priority == eRenderPriority::NOPRIORITY)
 	{
-		BaseEntity* ent = scene->entities[i];
-		if (!ent->visible)
-			continue;
-
-		//is a prefab!
-		if (ent->getType() == eEntityType::PREFAB)
+		for (int i = 0; i < scene->entities.size(); ++i)
 		{
-			PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-			if (pent->prefab)
-				storeDrawCall(&pent->root, camera);
+			BaseEntity* ent = scene->entities[i];
+			if (!ent->visible)
+				continue;
+
+			//is a prefab!
+			if (ent->getType() == eEntityType::PREFAB)
+			{
+				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+				if (pent->prefab)
+					renderNode(&pent->root, camera);
+			}
 		}
 	}
-
-	//ORDER RENDER CALLS BY DISTANCE TO CAMERA
-	std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
-	//render entities
-	for (int i = 0; i < render_calls.size(); ++i)
+	else if (current_priority == eRenderPriority::DISTANCE2CAMERA)
 	{
-		RenderCall rc = render_calls[i];
-		renderByDistance( &rc );
+		//first of all, clear the render calls vector
+		render_calls.clear();
+
+		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+		for (int i = 0; i < scene->entities.size(); ++i)
+		{
+			BaseEntity* ent = scene->entities[i];
+			if (!ent->visible)
+				continue;
+
+			//is a prefab!
+			if (ent->getType() == eEntityType::PREFAB)
+			{
+				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+				if (pent->prefab)
+					storeDrawCall(&pent->root, camera);
+			}
+		}
+
+		//ORDER RENDER CALLS BY DISTANCE TO CAMERA
+		std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
+		//render entities
+		for (int i = 0; i < render_calls.size(); ++i)
+		{
+			RenderCall rc = render_calls[i];
+			renderByDistance(&rc);
+		}
 	}
 }
 
@@ -240,8 +261,17 @@ void Renderer::showUI()
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::Checkbox("Boundaries", &render_boundaries);
 
-	//add here your stuff
-	//...
+	//RENDER PRIORITY
+	if (ImGui::TreeNode("Rendering Priority"))
+	{
+		const char* items[] = { "Without priority", "Distance to camera" };
+		static int item_current = 0;
+		ImGui::ListBox("", &item_current, items, IM_ARRAYSIZE(items), 4);
+
+		if (item_current == 0) current_priority = eRenderPriority::NOPRIORITY;
+		if (item_current == 1) current_priority = eRenderPriority::DISTANCE2CAMERA;
+		ImGui::TreePop();
+	}
 }
 
 #else

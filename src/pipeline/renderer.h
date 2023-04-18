@@ -18,6 +18,16 @@ namespace SCN {
 	class Prefab;
 	class Material;
 
+	//STRUCT TO STORE IMPORTANT INFO FOR DRAW CALLS
+	struct RenderCall {
+	public:
+		GFX::Mesh* mesh;
+		Material* material;
+		Matrix44 model;
+
+		float distance_2_camera;
+	};
+
 	// This class is in charge of rendering anything in our system.
 	// Separating the render from anything else makes the code cleaner
 	class Renderer
@@ -54,6 +64,10 @@ namespace SCN {
 		void showUI();
 
 		void cameraToShader(Camera* camera, GFX::Shader* shader); //sends camera uniforms to shader
+
+		void storeDrawCall(SCN::Node* node, Camera* camera);
+
+		void renderByDistance(RenderCall* rc);
 	};
 
 };

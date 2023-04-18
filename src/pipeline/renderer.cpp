@@ -22,6 +22,7 @@ using namespace SCN;
 
 //some globals
 GFX::Mesh sphere;
+std::vector<RenderCall*> render_calls;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -64,11 +65,11 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	if(skybox_cubemap)
 		renderSkybox(skybox_cubemap);
 
-	//render entities
+	//STORE DRAW CALLS IN VECTOR RENDER_CALLS
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
 		BaseEntity* ent = scene->entities[i];
-		if (!ent->visible )
+		if (!ent->visible)
 			continue;
 
 		//is a prefab!
@@ -76,8 +77,17 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 		{
 			PrefabEntity* pent = (SCN::PrefabEntity*)ent;
 			if (pent->prefab)
-				renderNode( &pent->root, camera);
+				storeDrawCall(&pent->root, camera);
 		}
+	}
+
+	//ORDER RENDER CALLS BY DISTANCE TO CAMERA
+	std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall* a, const RenderCall* b) {return(a->distance_2_camera > b->distance_2_camera); });
+	//render entities
+	for (int i = 0; i < render_calls.size(); ++i)
+	{
+		RenderCall* rc = render_calls[i];
+		renderByDistance( rc );
 	}
 }
 
@@ -235,3 +245,48 @@ void Renderer::showUI()
 #else
 void Renderer::showUI() {}
 #endif
+
+void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
+{
+	if (!node->visible)
+		return;
+
+	//compute global matrix
+	Matrix44 node_model = node->getGlobalMatrix(true);
+
+	//does this node have a mesh? then we must render it
+	if (node->mesh && node->material)
+	{
+		//compute the bounding box of the object in world space (by using the mesh bounding box transformed to world space)
+		BoundingBox world_bounding = transformBoundingBox(node_model, node->mesh->box);
+
+		//if bounding box is inside the camera frustum then the object is probably visible
+		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize))
+		{
+			Vector3f nodepos = node_model.getTranslation();
+			RenderCall rc;
+			rc.mesh = node->mesh;
+			rc.material = node->material;
+			rc.model = node_model;
+			rc.distance_2_camera = camera->eye.distance(nodepos);
+
+			render_calls.push_back(&rc);
+		}
+	}
+
+	//iterate recursively with children
+	for (int i = 0; i < node->children.size(); ++i)
+		storeDrawCall(node->children[i], camera);
+}
+
+void Renderer::renderByDistance(RenderCall* rc)
+{
+	if (rc->mesh && rc->material && rc->distance_2_camera)
+	{
+		if(render_boundaries)
+			rc->mesh->renderBounding(rc->model, true);
+
+		renderMeshWithMaterial(rc->model, rc->mesh, rc->material);
+
+	}
+}

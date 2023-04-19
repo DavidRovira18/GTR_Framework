@@ -5,6 +5,8 @@ skybox basic.vs skybox.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 
+basicphong basic.vs basicphong.fs
+
 \basic.vs
 
 #version 330 core
@@ -214,3 +216,45 @@ void main()
 	//calcule the position of the vertex using the matrices
 	gl_Position = u_viewprojection * vec4( v_world_position, 1.0 );
 }
+
+//MY SHADERS 
+
+\basicphong.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_world_position;
+in vec3 v_normal;
+in vec2 v_uv;
+in vec4 v_color;
+
+uniform vec4 u_color;
+uniform sampler2D u_texture;
+uniform sampler2D u_emissive_texture;
+uniform vec3 u_emissive_factor;
+
+uniform float u_time;
+uniform float u_alpha_cutoff;
+
+uniform vec3 u_ambient_light;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = v_uv;
+	vec4 color = u_color;
+	color *= texture( u_texture, v_uv );
+
+	if(color.a < u_alpha_cutoff)
+		discard;
+
+	color.xyz *= u_ambient_light; 
+
+	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	color.xyz += emissive_light;
+
+	FragColor = color;
+}
+

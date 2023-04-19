@@ -181,16 +181,21 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
+	GFX::Texture* white = NULL;
 	GFX::Texture* texture = NULL;
+	GFX::Texture* emissive_texture = NULL;
 	Camera* camera = Camera::current;
 	
+	white = GFX::Texture::getWhiteTexture();
 	texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
+	emissive_texture = material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+
 	//texture = material->emissive_texture;
 	//texture = material->metallic_roughness_texture;
 	//texture = material->normal_texture;
 	//texture = material->occlusion_texture;
 	if (texture == NULL)
-		texture = GFX::Texture::getWhiteTexture(); //a 1x1 white texture
+		texture = white; //a 1x1 white texture
 
 	//select the blending
 	if (material->alpha_mode == SCN::eAlphaMode::BLEND)
@@ -211,7 +216,7 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	glEnable(GL_DEPTH_TEST);
 
 	//chose a shader
-	shader = GFX::Shader::Get("texture");
+	shader = GFX::Shader::Get("basicphong");
 
     assert(glGetError() == GL_NO_ERROR);
 
@@ -229,6 +234,10 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	shader->setUniform("u_color", material->color);
 	if(texture)
 		shader->setUniform("u_texture", texture, 0);
+	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+	shader->setUniform("u_emissive_factor", material->emissive_factor);
+
+	shader->setUniform("u_ambient_light", scene->ambient_light);
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", material->alpha_mode == SCN::eAlphaMode::MASK ? material->alpha_cutoff : 0.001f);

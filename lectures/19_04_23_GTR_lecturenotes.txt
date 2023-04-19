@@ -1,0 +1,73 @@
+SDL_SetWindowPosition(window, x, y) //TO PUT THE WINDOW WHERE WE WANT IN THE SCREEN
+
+LIGHT COLOR * INTENSITY is what we send to the shader
+
+
+FALTA RENDERITZAR PRIMER ELS MATERIALS OPACOS I DESPRES ELS ALPHA PER DISTANCIA (AFEGIR EL CODI DE ORDENAR PER DISTANCIA A SETUP SCENE)
+
+//PSEUDOCODE FOR ADDING LIGHTS
+1.CLONAR renderMeshWithMaterial a una renderMeshWithMaterialLight por ejemplo
+2.ADD enum eRenderMode to switch between both modes (FLAT or LIGHTS).
+3.ADD switch case in renderScene
+	switch(current_render_mode)
+	{
+	case eRenderMode::FLAT renderMeshWithMaterial
+	case eRenderMode::LIGHTS renderMeshWithMaterialLightç
+	}
+4.ADD two vector of lights std::vector<LightEntity> lights; and std::vector<LightEntity> visible_lights (from the camera)
+5.ADD lights to the vectors when we add the render calls to the list of them
+6.TWO APPROACHES TO PASS THE LIGHTS TO THE SHADER (WE MUST DO BOTH); MULTIPASS & SINGLEPASS
+	6.1 MULTIPASS
+	On renderMeshWithMaterialLight: //WE CAN TEST SPHERE OF THE LIGHT(pos and the radius of the max dist) AND THE BOX OF THE MESH, IF DOES NOT COLLIDE THAT OBJECT IS NOT GOING TO BE RENDERED FOR THAT LIGHT (boundingboxsphereoverlap function)
+		glDepthFunc(GL_LEQUAL)
+		
+		if(light.size() == 0) //BE CAREFUL BC AMBIENT LIGHT IT IS A TYPE OF LIGHT
+			1.PASS LIGH TYPE AS 0. (NO LIGHT)
+			2.RENDER MESH
+		for(int i = 0; i < lights.size(); ++i)
+		{
+			LightEntity* light = lights[i];
+			
+			1.PASS LIGHT POSITION: light->root.global_model.getTranslation()
+			2.PASS LIGHT FRONT: light->root.model.rotateVector(vec3(0,0,1));
+			4.PASS LIGHT COLOR: light->color * light->intensity
+			5.PASS LIGHT TYPE: (int)light->light_type
+			6.PASS MAX LIGHT DIST: light->max_distance
+			//NOT A GOOD PRAXIS TO PASS ONE NUMBER TO THE SHADER IS GOOD PACKING IN VEC4
+			For exemple
+				PASS LIGHT INFO: vec4((int)light->light_type, light->near_distance, light->max_distance)
+			
+			4.RENDER MESH
+			
+			glEnable(GL_BLEND)
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE) //TAKE THE COLOR OF THIS PIXEL AND MULTIPLY BY ITS ALPHA AND MULTIPLY DE COLOR IT IS ON THE SCREEN AND MULTIPLY IT BY ONE
+			5.PASS A 0 AS AMBIENT LIGHT AND EMISSIVE FACTOR (Because we are adding these values for each light, we only one them the first time) 
+		}
+		glDepthFunc(GL_LESS)
+		glDisable(GL_BLEND)
+		
+//LIGHT SHADER (pseudocode per sobre)
+#define NOLIGHT 0
+#define POINT_LIGHT 1
+#define SPOT_LIGHT 2
+#define DIRECTIONAL_LIGHT 3
+//FALTEN AQUI TOTS ELS UNIFORMS
+vec4 albedo = u_color
+vec3 light = vec3(0.0) always initialize vectors with value inside, sino se vuelve loco i fica trash dintre. 
+light += ambientlight
+vec3 N = normalize(v_normal)
+
+if(u_light_type == POINT_LIGHT)
+	1.COMPUTE L = lightpos - worldpos;
+	2.COMPUTE DIST OF L = lenght(L);
+	3.COMPUTE NORMALIZATION OF L /= dist;
+	4.COMPUTE NdotL = dot(N,L)
+	5.COMPUTE ATTENUATION = max(maxdistance - dist / max_distance, 0.0)
+	6.ADD TO THE LIGHT NdotL clamped between 0.0,1.0 AND MULTIPLIED BY LIGHT COLOR AND ATTENUATION(light += max(NdotL, 0.0) * light_color * att)
+else if(u_light_type == DIRECTIONAL_LIGHT)
+	1.COMPUTE NdotL = dot(N, u_light_front)
+	2.ADD TO THE LIGHT NdotL ??
+vec3 color = albedo.xyz * light
+color += emissivefactor * texture(emissivetexture, v_uv).xyz
+FragColor = vec4(color, albedo.a)
+

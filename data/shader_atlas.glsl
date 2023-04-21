@@ -5,7 +5,7 @@ skybox basic.vs skybox.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 
-basicphong basic.vs basicphong.fs
+lights basic.vs lights.fs
 
 \basic.vs
 
@@ -219,7 +219,7 @@ void main()
 
 //MY SHADERS 
 
-\basicphong.fs
+\lights.fs
 
 #version 330 core
 

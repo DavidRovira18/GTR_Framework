@@ -28,6 +28,17 @@ namespace SCN {
 		float distance_2_camera;
 	};
 
+	enum eRenderMode {
+		FLAT,
+		LIGHTS
+	};
+
+	enum eShaders {
+		sFLAT,
+		sTEXTURE,
+		sLIGHTS
+	};
+
 	enum eRenderPriority {
 		NOPRIORITY,
 		DISTANCE2CAMERA
@@ -52,7 +63,7 @@ namespace SCN {
 		void setupScene();
 
 		//add here your functions
-		//...
+		const char* getShader(eShaders current);
 
 		//renders several elements of the scene
 		void renderScene(SCN::Scene* scene, Camera* camera);
@@ -65,6 +76,8 @@ namespace SCN {
 
 		//to render one mesh given its material and transformation matrix
 		void renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN::Material* material);
+
+		void renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh, SCN::Material* material);
 
 		void showUI();
 

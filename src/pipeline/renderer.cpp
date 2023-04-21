@@ -22,8 +22,16 @@ using namespace SCN;
 
 //some globals
 GFX::Mesh sphere;
+//RENDERING MODE
+eRenderMode current_mode = eRenderMode::FLAT;
+//RENDER CALLS AND PRIORITY
 std::vector<RenderCall> render_calls;
 eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
+//SHADER
+eShaders current_shader = eShaders::sFLAT;
+//LIGHTS
+std::vector<LightEntity> lights;
+std::vector<LightEntity> visible_lights;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -47,6 +55,16 @@ void Renderer::setupScene()
 		skybox_cubemap = nullptr;
 }
 
+const char* Renderer::getShader(eShaders current)
+{
+	switch (current)
+	{
+		case eShaders::sFLAT: return "flat";
+		case eShaders::sTEXTURE: return "texture";
+		case eShaders::sLIGHTS: return "lights";
+	}
+}
+
 void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 {
 	this->scene = scene;
@@ -65,55 +83,57 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	//render skybox
 	if(skybox_cubemap)
 		renderSkybox(skybox_cubemap);
-	if (current_priority == eRenderPriority::NOPRIORITY)
+	switch (current_priority)
 	{
-		for (int i = 0; i < scene->entities.size(); ++i)
+		case(eRenderPriority::NOPRIORITY):
 		{
-			BaseEntity* ent = scene->entities[i];
-			if (!ent->visible)
-				continue;
-
-			//is a prefab!
-			if (ent->getType() == eEntityType::PREFAB)
+			for (int i = 0; i < scene->entities.size(); ++i)
 			{
-				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-				if (pent->prefab)
-					renderNode(&pent->root, camera);
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
+
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						renderNode(&pent->root, camera);
+				}
 			}
-		}
-	}
-	else if (current_priority == eRenderPriority::DISTANCE2CAMERA)
-	{
-		//first of all, clear the render calls vector
-		render_calls.clear();
-
-		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-		for (int i = 0; i < scene->entities.size(); ++i)
+		};
+		case(eRenderPriority::DISTANCE2CAMERA):
 		{
-			BaseEntity* ent = scene->entities[i];
-			if (!ent->visible)
-				continue;
+			//first of all, clear the render calls vector
+			render_calls.clear();
 
-			//is a prefab!
-			if (ent->getType() == eEntityType::PREFAB)
+			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+			for (int i = 0; i < scene->entities.size(); ++i)
 			{
-				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-				if (pent->prefab)
-					storeDrawCall(&pent->root, camera);
-			}
-		}
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
 
-		//ORDER RENDER CALLS BY DISTANCE TO CAMERA
-		std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
-		//render entities
-		for (int i = 0; i < render_calls.size(); ++i)
-		{
-			RenderCall rc = render_calls[i];
-			renderByDistance(&rc);
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						storeDrawCall(&pent->root, camera);
+				}
+			}
+
+			//ORDER RENDER CALLS BY DISTANCE TO CAMERA
+			std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
+			//render entities
+			for (int i = 0; i < render_calls.size(); ++i)
+			{
+				RenderCall rc = render_calls[i];
+				renderByDistance(&rc);
+			}
 		}
 	}
 }
-
 
 void Renderer::renderSkybox(GFX::Texture* cubemap)
 {
@@ -162,7 +182,11 @@ void Renderer::renderNode(SCN::Node* node, Camera* camera)
 		{
 			if(render_boundaries)
 				node->mesh->renderBounding(node_model, true);
-			renderMeshWithMaterial(node_model, node->mesh, node->material);
+			switch(current_mode)
+			{
+				case (eRenderMode::FLAT): renderMeshWithMaterial(node_model, node->mesh, node->material);
+				case (eRenderMode::LIGHTS): renderMeshWithMaterialLight(node_model, node->mesh, node->material);
+			}
 		}
 	}
 
@@ -216,7 +240,8 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	glEnable(GL_DEPTH_TEST);
 
 	//chose a shader
-	shader = GFX::Shader::Get("basicphong");
+	const char* current = Renderer::getShader(current_shader);
+	shader = GFX::Shader::Get(current);
 
     assert(glGetError() == GL_NO_ERROR);
 
@@ -256,6 +281,93 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
+//renders a mesh given its transform and material
+void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh, SCN::Material* material)
+{
+	//in case there is nothing to do
+	if (!mesh || !mesh->getNumVertices() || !material)
+		return;
+	assert(glGetError() == GL_NO_ERROR);
+
+	//define locals to simplify coding
+	GFX::Shader* shader = NULL;
+	GFX::Texture* white = NULL;
+	GFX::Texture* texture = NULL;
+	GFX::Texture* emissive_texture = NULL;
+	Camera* camera = Camera::current;
+
+	white = GFX::Texture::getWhiteTexture();
+	texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
+	emissive_texture = material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+
+	//texture = material->emissive_texture;
+	//texture = material->metallic_roughness_texture;
+	//texture = material->normal_texture;
+	//texture = material->occlusion_texture;
+	if (texture == NULL)
+		texture = white; //a 1x1 white texture
+
+	//select the blending
+	if (material->alpha_mode == SCN::eAlphaMode::BLEND)
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else
+		glDisable(GL_BLEND);
+
+	//select if render both sides of the triangles
+	if (material->two_sided)
+		glDisable(GL_CULL_FACE);
+	else
+		glEnable(GL_CULL_FACE);
+	assert(glGetError() == GL_NO_ERROR);
+
+	glEnable(GL_DEPTH_TEST);
+
+	//chose a shader
+	const char* current = Renderer::getShader(current_shader);
+	shader = GFX::Shader::Get(current);
+
+	assert(glGetError() == GL_NO_ERROR);
+
+	//no shader? then nothing to render
+	if (!shader)
+		return;
+	shader->enable();
+
+	//upload uniforms
+	shader->setUniform("u_model", model);
+	cameraToShader(camera, shader);
+	float t = getTime();
+	shader->setUniform("u_time", t);
+
+	shader->setUniform("u_color", material->color);
+	if (texture)
+		shader->setUniform("u_texture", texture, 0);
+	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+	shader->setUniform("u_emissive_factor", material->emissive_factor);
+
+	shader->setUniform("u_ambient_light", scene->ambient_light);
+
+	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
+	shader->setUniform("u_alpha_cutoff", material->alpha_mode == SCN::eAlphaMode::MASK ? material->alpha_cutoff : 0.001f);
+
+	if (render_wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	//do the draw call that renders the mesh into the screen
+	mesh->render(GL_TRIANGLES);
+
+	//disable shader
+	shader->disable();
+
+	//set the render state as it was before to avoid problems with future renders
+	glDisable(GL_BLEND);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+
 void SCN::Renderer::cameraToShader(Camera* camera, GFX::Shader* shader)
 {
 	shader->setUniform("u_viewprojection", camera->viewprojection_matrix );
@@ -273,12 +385,55 @@ void Renderer::showUI()
 	//RENDER PRIORITY
 	if (ImGui::TreeNode("Rendering Priority"))
 	{
-		const char* items[] = { "Without priority", "Distance to camera" };
-		static int item_current = 0;
-		ImGui::ListBox("", &item_current, items, IM_ARRAYSIZE(items), 4);
+		const char* priority[] = { "Normal", "Dist2cam" };
+		static int priority_current = 0;
+		ImGui::Combo("Priority", &priority_current, priority, IM_ARRAYSIZE(priority), 2);
 
-		if (item_current == 0) current_priority = eRenderPriority::NOPRIORITY;
-		if (item_current == 1) current_priority = eRenderPriority::DISTANCE2CAMERA;
+		if (priority_current == 0) current_priority = eRenderPriority::NOPRIORITY;
+		if (priority_current == 1) current_priority = eRenderPriority::DISTANCE2CAMERA;
+
+		ImGui::TreePop();
+	}
+
+	//RENDER MODE
+	if (ImGui::TreeNode("Rendering Mode"))
+	{
+		const char* mode[] = { "Flat", "Lights" };
+		static int mode_current = 0;
+		ImGui::Combo("RenderMode", &mode_current, mode, IM_ARRAYSIZE(mode), 2);
+
+		if (mode_current == 0)
+		{
+				current_mode = eRenderMode::FLAT;
+
+			if (ImGui::TreeNode("Available Shaders"))
+			{
+				const char* shaders[] = { "Flat", "Texture" };
+				static int shader_current = 0;
+				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 3);
+
+				if (shader_current == 0) current_shader = eShaders::sFLAT;
+				if (shader_current == 1) current_shader = eShaders::sTEXTURE;
+
+				ImGui::TreePop();
+			}
+		}
+		if (mode_current == 1)
+		{
+			current_mode = eRenderMode::LIGHTS;
+
+			if (ImGui::TreeNode("Available Shaders"))
+			{
+				const char* shaders[] = { "Lights" };
+				static int shader_current = 0;
+				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 1);
+
+				if (shader_current == 0) current_shader = eShaders::sLIGHTS;
+
+				ImGui::TreePop();
+			}
+		}
+
 		ImGui::TreePop();
 	}
 }

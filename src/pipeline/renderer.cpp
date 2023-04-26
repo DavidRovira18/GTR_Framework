@@ -449,7 +449,11 @@ void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh
 	case(eLightsRender::MULTIPASS):
 	{
 		glDepthFunc(GL_LEQUAL); //render if the z is the same or closer to the camera
-
+		if (lights.size() == 0)
+		{
+			shader->setUniform("u_light_type", (int)eLightType::NO_LIGHT);
+			mesh->render(GL_TRIANGLES);
+		}
 		for (int i = 0; i < lights.size(); ++i)
 		{
 			LightEntity* light = lights[i];
@@ -458,6 +462,7 @@ void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh
 			shader->setUniform("u_light_pos", light->root.model.getTranslation());
 			shader->setUniform("u_light_color", light->color * light->intensity);
 			shader->setUniform("u_light_type", (int)light->light_type);
+			shader->setUniform("u_light_max_dist", light->max_distance);
 
 			if (light->light_type == eLightType::POINT)
 			{

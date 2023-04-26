@@ -278,7 +278,7 @@ void main()
 
 		float NdotL = dot(N,L);
 
-		light += clamp(NdotL, 0.0, 1.0);
+		light += max(NdotL, 0.0) * u_light_color;
 	}
 
 	vec3 color = albedo.xyz * light;

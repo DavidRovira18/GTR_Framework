@@ -41,6 +41,7 @@ namespace SCN {
 
 	enum eRenderPriority {
 		NOPRIORITY,
+		ALPHA1,
 		DISTANCE2CAMERA
 	};
 

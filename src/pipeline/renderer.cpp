@@ -26,6 +26,7 @@ GFX::Mesh sphere;
 eRenderMode current_mode = eRenderMode::FLAT;
 //RENDER CALLS AND PRIORITY
 std::vector<RenderCall> render_calls;
+std::vector<RenderCall> render_calls_opaque;
 eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
 //SHADER
 eShaders current_shader = eShaders::sFLAT;
@@ -102,10 +103,11 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 				}
 			}
 		};
-		case(eRenderPriority::DISTANCE2CAMERA):
+		case(eRenderPriority::ALPHA1):
 		{
-			//first of all, clear the render calls vector
+			//first of all, clear the render calls vectors
 			render_calls.clear();
+			render_calls_opaque.clear();
 
 			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
 			for (int i = 0; i < scene->entities.size(); ++i)
@@ -123,8 +125,52 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 				}
 			}
 
+			//render opaque entities
+			for (int i = 0; i < render_calls_opaque.size(); ++i)
+			{
+				RenderCall rc = render_calls_opaque[i];
+				renderByDistance(&rc);
+			}
+
+			//render transparent entities 
+			for (int i = 0; i < render_calls.size(); ++i)
+			{
+				RenderCall rc = render_calls[i];
+				renderByDistance(&rc);
+			}
+		}
+		case(eRenderPriority::DISTANCE2CAMERA):
+		{
+			//first of all, clear the render calls vectors
+			render_calls.clear();
+			render_calls_opaque.clear();
+
+			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+			for (int i = 0; i < scene->entities.size(); ++i)
+			{
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
+
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						storeDrawCall(&pent->root, camera);
+				}
+			}
+
+			//render opaque entities
+			for (int i = 0; i < render_calls_opaque.size(); ++i)
+			{
+				RenderCall rc = render_calls_opaque[i];
+				renderByDistance(&rc);
+			}
+
 			//ORDER RENDER CALLS BY DISTANCE TO CAMERA
 			std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
+			
 			//render entities
 			for (int i = 0; i < render_calls.size(); ++i)
 			{
@@ -385,12 +431,13 @@ void Renderer::showUI()
 	//RENDER PRIORITY
 	if (ImGui::TreeNode("Rendering Priority"))
 	{
-		const char* priority[] = { "Normal", "Dist2cam" };
+		const char* priority[] = { "Normal", "Opacity", "Dist2cam" };
 		static int priority_current = 0;
-		ImGui::Combo("Priority", &priority_current, priority, IM_ARRAYSIZE(priority), 2);
+		ImGui::Combo("Priority", &priority_current, priority, IM_ARRAYSIZE(priority), 3);
 
 		if (priority_current == 0) current_priority = eRenderPriority::NOPRIORITY;
-		if (priority_current == 1) current_priority = eRenderPriority::DISTANCE2CAMERA;
+		if (priority_current == 1) current_priority = eRenderPriority::ALPHA1;
+		if (priority_current == 2) current_priority = eRenderPriority::DISTANCE2CAMERA;
 
 		ImGui::TreePop();
 	}
@@ -404,7 +451,8 @@ void Renderer::showUI()
 
 		if (mode_current == 0)
 		{
-				current_mode = eRenderMode::FLAT;
+			current_mode = eRenderMode::FLAT;
+			current_shader = eShaders::sFLAT;
 
 			if (ImGui::TreeNode("Available Shaders"))
 			{
@@ -421,7 +469,7 @@ void Renderer::showUI()
 		if (mode_current == 1)
 		{
 			current_mode = eRenderMode::LIGHTS;
-
+			current_shader = eShaders::sLIGHTS;
 			if (ImGui::TreeNode("Available Shaders"))
 			{
 				const char* shaders[] = { "Lights" };
@@ -466,7 +514,7 @@ void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
 			rc.model = node_model;
 			rc.distance_2_camera = camera->eye.distance(nodepos);
 
-			render_calls.push_back(rc);
+			rc.material->alpha_mode == NO_ALPHA ? render_calls_opaque.push_back(rc) : render_calls.push_back(rc);
 		}
 	}
 

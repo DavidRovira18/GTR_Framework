@@ -24,6 +24,7 @@ using namespace SCN;
 GFX::Mesh sphere;
 //RENDERING MODE
 eRenderMode current_mode = eRenderMode::FLAT;
+eLightsRender current_lights_render = eLightsRender::MULTIPASS;
 //RENDER CALLS AND PRIORITY
 std::vector<RenderCall> render_calls;
 std::vector<RenderCall> render_calls_opaque;
@@ -31,7 +32,7 @@ eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
 //SHADER
 eShaders current_shader = eShaders::sFLAT;
 //LIGHTS
-std::vector<LightEntity> lights;
+std::vector<LightEntity*> lights;
 std::vector<LightEntity> visible_lights;
 
 Renderer::Renderer(const char* shader_atlas_filename)
@@ -48,12 +49,98 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	sphere.createSphere(1.0f);
 }
 
-void Renderer::setupScene()
+void Renderer::setupScene(Camera* camera)
 {
 	if (scene->skybox_filename.size())
 		skybox_cubemap = GFX::Texture::Get(std::string(scene->base_folder + "/" + scene->skybox_filename).c_str());
 	else
 		skybox_cubemap = nullptr;
+	
+	//PROCESS ENTITIES 
+	
+	//lights
+	lights.clear();
+
+	for (int i = 0; i < scene->entities.size(); ++i)
+	{
+		BaseEntity* ent = scene->entities[i];
+		if (!ent->visible)
+			continue;
+
+		//is a prefab!
+		if (ent->getType() == eEntityType::LIGHT)
+		{
+			LightEntity* lent = (SCN::LightEntity*)ent;
+			lights.push_back(lent);
+		}
+	}
+
+	//render calls
+	//first of all, clear the render calls vectors
+	render_calls.clear();
+	render_calls_opaque.clear();
+
+	switch (current_priority)
+	{
+	case(eRenderPriority::NOPRIORITY):
+	{
+		for (int i = 0; i < scene->entities.size(); ++i)
+		{
+			BaseEntity* ent = scene->entities[i];
+			if (!ent->visible)
+				continue;
+
+			//is a prefab!
+			if (ent->getType() == eEntityType::PREFAB)
+			{
+				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+				if (pent->prefab)
+					storeDrawCallNoPriority(&pent->root, camera);
+			}
+		}
+		break;
+	};
+	case(eRenderPriority::ALPHA1):
+	{
+		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+		for (int i = 0; i < scene->entities.size(); ++i)
+		{
+			BaseEntity* ent = scene->entities[i];
+			if (!ent->visible)
+				continue;
+
+			//is a prefab!
+			if (ent->getType() == eEntityType::PREFAB)
+			{
+				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+				if (pent->prefab)
+					storeDrawCall(&pent->root, camera);
+			}
+		}
+		break;
+	}
+	case(eRenderPriority::DISTANCE2CAMERA):
+	{
+		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+		for (int i = 0; i < scene->entities.size(); ++i)
+		{
+			BaseEntity* ent = scene->entities[i];
+			if (!ent->visible)
+				continue;
+
+			//is a prefab!
+			if (ent->getType() == eEntityType::PREFAB)
+			{
+				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+				if (pent->prefab)
+					storeDrawCall(&pent->root, camera);
+			}
+		}
+		//ORDER RENDER CALLS BY DISTANCE TO CAMERA
+		std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
+		break;
+	}
+	}
 }
 
 const char* Renderer::getShader(eShaders current)
@@ -69,7 +156,7 @@ const char* Renderer::getShader(eShaders current)
 void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 {
 	this->scene = scene;
-	setupScene();
+	setupScene(camera);
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
@@ -88,95 +175,46 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	{
 		case(eRenderPriority::NOPRIORITY):
 		{
-			for (int i = 0; i < scene->entities.size(); ++i)
+			for (int i = 0; i < render_calls.size(); ++i)
 			{
-				BaseEntity* ent = scene->entities[i];
-				if (!ent->visible)
-					continue;
-
-				//is a prefab!
-				if (ent->getType() == eEntityType::PREFAB)
-				{
-					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-					if (pent->prefab)
-						renderNode(&pent->root, camera);
-				}
+				RenderCall rc = render_calls[i];
+				renderRenderCalls(&rc);
 			}
+			break;
 		};
 		case(eRenderPriority::ALPHA1):
 		{
-			//first of all, clear the render calls vectors
-			render_calls.clear();
-			render_calls_opaque.clear();
-
-			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-			for (int i = 0; i < scene->entities.size(); ++i)
-			{
-				BaseEntity* ent = scene->entities[i];
-				if (!ent->visible)
-					continue;
-
-				//is a prefab!
-				if (ent->getType() == eEntityType::PREFAB)
-				{
-					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-					if (pent->prefab)
-						storeDrawCall(&pent->root, camera);
-				}
-			}
-
 			//render opaque entities
 			for (int i = 0; i < render_calls_opaque.size(); ++i)
 			{
 				RenderCall rc = render_calls_opaque[i];
-				renderByDistance(&rc);
+				renderRenderCalls(&rc);
 			}
 
 			//render transparent entities 
 			for (int i = 0; i < render_calls.size(); ++i)
 			{
 				RenderCall rc = render_calls[i];
-				renderByDistance(&rc);
+				renderRenderCalls(&rc);
 			}
+			break;
 		}
 		case(eRenderPriority::DISTANCE2CAMERA):
 		{
-			//first of all, clear the render calls vectors
-			render_calls.clear();
-			render_calls_opaque.clear();
-
-			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-			for (int i = 0; i < scene->entities.size(); ++i)
-			{
-				BaseEntity* ent = scene->entities[i];
-				if (!ent->visible)
-					continue;
-
-				//is a prefab!
-				if (ent->getType() == eEntityType::PREFAB)
-				{
-					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-					if (pent->prefab)
-						storeDrawCall(&pent->root, camera);
-				}
-			}
-
 			//render opaque entities
 			for (int i = 0; i < render_calls_opaque.size(); ++i)
 			{
 				RenderCall rc = render_calls_opaque[i];
-				renderByDistance(&rc);
+				renderRenderCalls(&rc);
 			}
-
-			//ORDER RENDER CALLS BY DISTANCE TO CAMERA
-			std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
-			
+	
 			//render entities
 			for (int i = 0; i < render_calls.size(); ++i)
 			{
 				RenderCall rc = render_calls[i];
-				renderByDistance(&rc);
+				renderRenderCalls(&rc);
 			}
+			break;
 		}
 	}
 }
@@ -230,8 +268,16 @@ void Renderer::renderNode(SCN::Node* node, Camera* camera)
 				node->mesh->renderBounding(node_model, true);
 			switch(current_mode)
 			{
-				case (eRenderMode::FLAT): renderMeshWithMaterial(node_model, node->mesh, node->material);
-				case (eRenderMode::LIGHTS): renderMeshWithMaterialLight(node_model, node->mesh, node->material);
+				case (eRenderMode::FLAT): 
+				{
+					renderMeshWithMaterial(node_model, node->mesh, node->material);
+					break;
+				}
+				case (eRenderMode::LIGHTS): 
+				{
+					renderMeshWithMaterialLight(node_model, node->mesh, node->material);
+					break;
+				}
 			}
 		}
 	}
@@ -252,20 +298,18 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
 	GFX::Texture* white = NULL;
-	GFX::Texture* texture = NULL;
-	GFX::Texture* emissive_texture = NULL;
+	GFX::Texture* albedo_texture = NULL;
 	Camera* camera = Camera::current;
 	
 	white = GFX::Texture::getWhiteTexture();
-	texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
-	emissive_texture = material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+	albedo_texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
 
 	//texture = material->emissive_texture;
 	//texture = material->metallic_roughness_texture;
 	//texture = material->normal_texture;
 	//texture = material->occlusion_texture;
-	if (texture == NULL)
-		texture = white; //a 1x1 white texture
+	if (albedo_texture == NULL)
+		albedo_texture = white; //a 1x1 white texture
 
 	//select the blending
 	if (material->alpha_mode == SCN::eAlphaMode::BLEND)
@@ -303,9 +347,7 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN
 	shader->setUniform("u_time", t );
 
 	shader->setUniform("u_color", material->color);
-	if(texture)
-		shader->setUniform("u_texture", texture, 0);
-	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+	shader->setUniform("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
 	shader->setUniform("u_emissive_factor", material->emissive_factor);
 
 	shader->setUniform("u_ambient_light", scene->ambient_light);
@@ -338,20 +380,20 @@ void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
 	GFX::Texture* white = NULL;
-	GFX::Texture* texture = NULL;
+	GFX::Texture* albedo_texture = NULL;
 	GFX::Texture* emissive_texture = NULL;
 	Camera* camera = Camera::current;
 
 	white = GFX::Texture::getWhiteTexture();
-	texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
+	albedo_texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
 	emissive_texture = material->textures[SCN::eTextureChannel::EMISSIVE].texture;
 
 	//texture = material->emissive_texture;
 	//texture = material->metallic_roughness_texture;
 	//texture = material->normal_texture;
 	//texture = material->occlusion_texture;
-	if (texture == NULL)
-		texture = white; //a 1x1 white texture
+	if (albedo_texture == NULL)
+		albedo_texture = white; //a 1x1 white texture
 
 	//select the blending
 	if (material->alpha_mode == SCN::eAlphaMode::BLEND)
@@ -388,10 +430,10 @@ void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh
 	float t = getTime();
 	shader->setUniform("u_time", t);
 
-	shader->setUniform("u_color", material->color);
-	if (texture)
-		shader->setUniform("u_texture", texture, 0);
+	shader->setUniform("u_color", material->color);	
+	shader->setUniform("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
 	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+
 	shader->setUniform("u_emissive_factor", material->emissive_factor);
 
 	shader->setUniform("u_ambient_light", scene->ambient_light);
@@ -402,15 +444,43 @@ void Renderer::renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh
 	if (render_wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	//do the draw call that renders the mesh into the screen
-	mesh->render(GL_TRIANGLES);
+	switch (current_lights_render)
+	{
+	case(eLightsRender::MULTIPASS):
+	{
+		glDepthFunc(GL_LEQUAL); //render if the z is the same or closer to the camera
 
+		for (int i = 0; i < lights.size(); ++i)
+		{
+			LightEntity* light = lights[i];
+
+			//shared variables between types of lights
+			shader->setUniform("u_light_pos", light->root.model.getTranslation());
+			shader->setUniform("u_light_color", light->color * light->intensity);
+			shader->setUniform("u_light_type", (int)light->light_type);
+
+			if (light->light_type == eLightType::POINT)
+			{
+			}
+
+			else
+				continue;
+			//do the draw call that renders the mesh into the screen
+			mesh->render(GL_TRIANGLES);
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		}
+		break;
+	}
+	}
 	//disable shader
 	shader->disable();
 
 	//set the render state as it was before to avoid problems with future renders
 	glDisable(GL_BLEND);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDepthFunc(GL_LESS); 
 }
 
 
@@ -523,14 +593,57 @@ void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
 		storeDrawCall(node->children[i], camera);
 }
 
-void Renderer::renderByDistance(RenderCall* rc)
+void Renderer::storeDrawCallNoPriority(SCN::Node* node, Camera* camera)
 {
-	if (rc->mesh && rc->material && rc->distance_2_camera)
+	if (!node->visible)
+		return;
+
+	//compute global matrix
+	Matrix44 node_model = node->getGlobalMatrix(true);
+
+	//does this node have a mesh? then we must render it
+	if (node->mesh && node->material)
+	{
+		//compute the bounding box of the object in world space (by using the mesh bounding box transformed to world space)
+		BoundingBox world_bounding = transformBoundingBox(node_model, node->mesh->box);
+
+		//if bounding box is inside the camera frustum then the object is probably visible
+		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize))
+		{
+			Vector3f nodepos = node_model.getTranslation();
+			RenderCall rc;
+			rc.mesh = node->mesh;
+			rc.material = node->material;
+			rc.model = node_model;
+
+			render_calls.push_back(rc);
+		}
+	}
+
+	//iterate recursively with children
+	for (int i = 0; i < node->children.size(); ++i)
+		storeDrawCallNoPriority(node->children[i], camera);
+}
+
+void Renderer::renderRenderCalls(RenderCall* rc)
+{
+	if (rc->mesh && rc->material)
 	{
 		if(render_boundaries)
 			rc->mesh->renderBounding(rc->model, true);
 
-		renderMeshWithMaterial(rc->model, rc->mesh, rc->material);
-
+		switch (current_mode)
+		{
+		case (eRenderMode::FLAT):
+		{
+			renderMeshWithMaterial(rc->model, rc->mesh, rc->material);
+			break;
+		}
+		case (eRenderMode::LIGHTS):
+		{
+			renderMeshWithMaterialLight(rc->model, rc->mesh, rc->material);
+			break;
+		}
+		}
 	}
 }

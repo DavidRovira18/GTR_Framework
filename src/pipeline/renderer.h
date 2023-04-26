@@ -33,6 +33,11 @@ namespace SCN {
 		LIGHTS
 	};
 
+	enum eLightsRender {
+		MULTIPASS,
+		SINGLEPASS
+	};
+
 	enum eShaders {
 		sFLAT,
 		sTEXTURE,
@@ -61,7 +66,7 @@ namespace SCN {
 		Renderer(const char* shaders_atlas_filename );
 
 		//just to be sure we have everything ready for the rendering
-		void setupScene();
+		void setupScene(Camera* camera);
 
 		//add here your functions
 		const char* getShader(eShaders current);
@@ -86,7 +91,9 @@ namespace SCN {
 
 		void storeDrawCall(SCN::Node* node, Camera* camera);
 
-		void renderByDistance(RenderCall* rc);
+		void storeDrawCallNoPriority(SCN::Node* node, Camera* camera);
+
+		void renderRenderCalls(RenderCall* rc);
 	};
 
 };

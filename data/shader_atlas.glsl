@@ -89,7 +89,7 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform vec4 u_color;
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo_texture;
 uniform float u_time;
 uniform float u_alpha_cutoff;
 
@@ -99,7 +99,7 @@ void main()
 {
 	vec2 uv = v_uv;
 	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+	color *= texture( u_albedo_texture, v_uv );
 
 	if(color.a < u_alpha_cutoff)
 		discard;
@@ -229,32 +229,63 @@ in vec3 v_normal;
 in vec2 v_uv;
 in vec4 v_color;
 
+//material properties
+
 uniform vec4 u_color;
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo_texture;
 uniform sampler2D u_emissive_texture;
 uniform vec3 u_emissive_factor;
 
+//light properties
+
+#define NO_LIGHT 0
+#define POINT_LIGHT 1
+#define SPOT_LIGHT 2
+#define DIRECTIONAL_LIGHT 3
+
+uniform int u_light_type;
+uniform vec3 u_light_pos;
+uniform vec3 u_ambient_light;
+uniform vec3 u_light_color;
+
+//global properties
+
 uniform float u_time;
 uniform float u_alpha_cutoff;
-
-uniform vec3 u_ambient_light;
 
 out vec4 FragColor;
 
 void main()
 {
 	vec2 uv = v_uv;
-	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+	vec4 albedo = u_color;
+	albedo *= texture( u_albedo_texture, v_uv );
 
-	if(color.a < u_alpha_cutoff)
+	if(albedo.a < u_alpha_cutoff)
 		discard;
 
-	color.xyz *= u_ambient_light; 
+	vec3 light = vec3(0.0);
+	light += u_ambient_light; 
+
+	vec3 N = normalize(v_normal);
+
+	if(u_light_type == POINT_LIGHT)
+	{
+		//BASIC PHONG
+		vec3 L = u_light_pos - v_world_position;
+		float dist = length(L);
+		L /= dist;
+
+		float NdotL = dot(N,L);
+
+		light += clamp(NdotL, 0.0, 1.0);
+	}
+
+	vec3 color = albedo.xyz * light;
 
 	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
-	color.xyz += emissive_light;
+	color += emissive_light;
 
-	FragColor = color;
+	FragColor = vec4(color, albedo.a);
 }
 

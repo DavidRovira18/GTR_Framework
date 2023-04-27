@@ -229,24 +229,29 @@ in vec3 v_normal;
 in vec2 v_uv;
 in vec4 v_color;
 
+uniform vec3 u_camera_pos;
 //material properties
 
 uniform vec4 u_color;
 uniform sampler2D u_albedo_texture;
 uniform sampler2D u_emissive_texture;
+uniform sampler2D u_metallic_roughness_texture;
 uniform vec3 u_emissive_factor;
 
 //light properties
 
-#define NO_LIGHT 0
-#define POINT_LIGHT 1
-#define SPOT_LIGHT 2
-#define DIRECTIONAL_LIGHT 3
+#define NO_LIGHT 0.0
+#define POINT_LIGHT 1.0
+#define SPOT_LIGHT 2.0
+#define DIRECTIONAL_LIGHT 3.0
 
-uniform int u_light_type;
 uniform vec3 u_light_pos;
+uniform vec3 u_light_front;
+uniform vec2 u_light_cone; //cos(min_angle), cos(max_angle)
 uniform vec3 u_ambient_light;
 uniform vec3 u_light_color;
+
+uniform vec4 u_light_info; //vec4(light_type, near_distance, max_distance, 0)
 
 //global properties
 
@@ -261,6 +266,8 @@ void main()
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
 
+	float alpha = texture(u_metallic_roughness_texture, v_uv).b;
+
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
@@ -269,16 +276,49 @@ void main()
 
 	vec3 N = normalize(v_normal);
 
-	if(u_light_type == POINT_LIGHT)
+	if(u_light_info.x == DIRECTIONAL_LIGHT)
+	{
+		float NdotL = dot(N,u_light_front);
+
+		light += max(NdotL, 0.0) * u_light_color;
+	}
+
+	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
 	{
 		//BASIC PHONG
 		vec3 L = u_light_pos - v_world_position;
 		float dist = length(L);
 		L /= dist;
 
+		//Diffuse light
 		float NdotL = dot(N,L);
 
 		light += max(NdotL, 0.0) * u_light_color;
+
+		//Specular light
+		float ks = texture(u_metallic_roughness_texture, v_uv).g;
+		vec3 R = normalize(reflect(L, N));
+		vec3 V = normalize(v_position - u_camera_pos);
+
+		float RdotV = max(dot(V,R), 0.0);
+
+		light += ks * pow(RdotV, alpha) * u_light_color;
+
+		//LINEAR DISTANCE ATTENUATION
+		float attenuation = u_light_info.z - dist;
+		attenuation /= u_light_info.z;
+		attenuation = max(attenuation, 0.0);
+
+		if(u_light_info.x == SPOT_LIGHT)
+		{
+			float cos_angle = dot(u_light_front, L);
+			if(cos_angle < u_light_cone.y)
+				attenuation = 0.0;
+			else if(cos_angle < u_light_cone.x)
+				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
+		}
+		
+		light *= attenuation;
 	}
 
 	vec3 color = albedo.xyz * light;

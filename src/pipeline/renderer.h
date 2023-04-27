@@ -24,6 +24,7 @@ namespace SCN {
 		GFX::Mesh* mesh;
 		Material* material;
 		Matrix44 model;
+		BoundingBox bounding;
 
 		float distance_2_camera;
 	};
@@ -81,9 +82,9 @@ namespace SCN {
 		void renderNode(SCN::Node* node, Camera* camera);
 
 		//to render one mesh given its material and transformation matrix
-		void renderMeshWithMaterial(const Matrix44 model, GFX::Mesh* mesh, SCN::Material* material);
+		void renderMeshWithMaterial(RenderCall* rc);
 
-		void renderMeshWithMaterialLight(const Matrix44 model, GFX::Mesh* mesh, SCN::Material* material);
+		void renderMeshWithMaterialLight(RenderCall* rc);
 
 		void showUI();
 

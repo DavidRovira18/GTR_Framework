@@ -42,7 +42,8 @@ namespace SCN {
 	enum eShaders {
 		sFLAT,
 		sTEXTURE,
-		sLIGHTS
+		sLIGHTS_MULTI,
+		sLIGHTS_SINGLE
 	};
 
 	enum eRenderPriority {
@@ -74,6 +75,10 @@ namespace SCN {
 
 		//renders several elements of the scene
 		void renderScene(SCN::Scene* scene, Camera* camera);
+		void renderFrame(SCN::Scene* scene, Camera* camera);
+
+		void generateShadowMaps();
+
 
 		//render the skybox
 		void renderSkybox(GFX::Texture* cubemap);
@@ -84,7 +89,14 @@ namespace SCN {
 		//to render one mesh given its material and transformation matrix
 		void renderMeshWithMaterial(RenderCall* rc);
 
+		void renderMeshWithMaterialFlat(RenderCall* rc);
+
+
 		void renderMeshWithMaterialLight(RenderCall* rc);
+
+		void renderMultipass(GFX::Shader* shader, RenderCall* rc);
+
+		void renderSinglepass(GFX::Shader* shader, RenderCall* rc);
 
 		void showUI();
 
@@ -95,6 +107,8 @@ namespace SCN {
 		void storeDrawCallNoPriority(SCN::Node* node, Camera* camera);
 
 		void renderRenderCalls(RenderCall* rc);
+
+		void renderShadowmaps();
 	};
 
 };

@@ -5,7 +5,8 @@ skybox basic.vs skybox.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 
-lights basic.vs lights.fs
+lights_multi basic.vs lights_multi.fs
+lights_single basic.vs lights_single.fs
 
 \basic.vs
 
@@ -219,7 +220,7 @@ void main()
 
 //MY SHADERS 
 
-\lights.fs
+\lights_multi.fs
 
 #version 330 core
 
@@ -251,14 +252,58 @@ uniform vec2 u_light_cone; //cos(min_angle), cos(max_angle)
 uniform vec3 u_ambient_light;
 uniform vec3 u_light_color;
 
-uniform vec4 u_light_info; //vec4(light_type, near_distance, max_distance, 0)
+uniform vec4 u_light_info; //vec4(light_type, near_distance, max_distance, enable_specular)
+
+uniform vec2 u_shadow_params; // 0 o 1 shadowmap or not, bias
+uniform sampler2D u_shadowmap;
+uniform mat4 u_shadow_viewproj;
 
 //global properties
 
 uniform float u_time;
 uniform float u_alpha_cutoff;
 
+//flags
+
 out vec4 FragColor;
+
+float testShadow(vec3 pos)
+{
+	//project our 3D position to the shadowmap
+	vec4 proj_pos = u_shadow_viewproj * vec4(pos,1.0);
+
+	//from homogeneus space to clip space
+	vec2 shadow_uv = proj_pos.xy / proj_pos.w;
+
+	//from clip space to uv space
+	shadow_uv = shadow_uv * 0.5 + vec2(0.5);
+
+	//get point depth [-1 .. +1] in non-linear space
+	float real_depth = (proj_pos.z - u_shadow_params.y) / proj_pos.w;
+
+	//normalize from [-1..+1] to [0..+1] still non-linear
+	real_depth = real_depth * 0.5 + 0.5;
+
+	//read depth from depth buffer in [0..+1] non-linear
+	float shadow_depth = texture( u_shadowmap, shadow_uv).x;
+
+	//it is outside on the sides
+	if( shadow_uv.x < 0.0 || shadow_uv.x > 1.0 ||
+		shadow_uv.y < 0.0 || shadow_uv.y > 1.0 )
+			return 0.0;
+
+	//it is before near or behind far plane
+	if(real_depth < 0.0 || real_depth > 1.0)
+		return 1.0;
+
+	//compute final shadow factor by comparing
+	float shadow_factor = 1.0;
+
+	//we can compare them, even if they are not linear
+	if( shadow_depth < real_depth )
+		shadow_factor = 0.0;
+	return shadow_factor;
+}
 
 void main()
 {
@@ -266,7 +311,8 @@ void main()
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
 
-	float alpha = texture(u_metallic_roughness_texture, v_uv).b;
+	float alpha = 1 - texture(u_metallic_roughness_texture, v_uv).b;
+	float ks = texture(u_metallic_roughness_texture, v_uv).g;
 
 	if(albedo.a < u_alpha_cutoff)
 		discard;
@@ -276,11 +322,30 @@ void main()
 
 	vec3 N = normalize(v_normal);
 
+	vec3 V = normalize(v_position - u_camera_pos);
+
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0)
+	{
+		shadow_factor = testShadow(v_world_position);
+	}
+
 	if(u_light_info.x == DIRECTIONAL_LIGHT)
 	{
+		//Diffuse light
 		float NdotL = dot(N,u_light_front);
-
 		light += max(NdotL, 0.0) * u_light_color;
+
+		//Specular light
+		if(u_light_info.a == 1)
+		{
+			vec3 R = normalize(reflect(u_light_front, N));
+
+			float RdotV = max(dot(V,R), 0.0);
+
+			light += ks * pow(RdotV, alpha) * u_light_color;
+		}
 	}
 
 	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
@@ -296,13 +361,14 @@ void main()
 		light += max(NdotL, 0.0) * u_light_color;
 
 		//Specular light
-		float ks = texture(u_metallic_roughness_texture, v_uv).g;
-		vec3 R = normalize(reflect(L, N));
-		vec3 V = normalize(v_position - u_camera_pos);
+		if(u_light_info.a == 1)
+		{
+			vec3 R = normalize(reflect(L, N));
 
-		float RdotV = max(dot(V,R), 0.0);
+			float RdotV = max(dot(V,R), 0.0);
 
-		light += ks * pow(RdotV, alpha) * u_light_color;
+			light += ks * pow(RdotV, alpha) * u_light_color;
+		}
 
 		//LINEAR DISTANCE ATTENUATION
 		float attenuation = u_light_info.z - dist;
@@ -318,7 +384,7 @@ void main()
 				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
 		}
 		
-		light *= attenuation;
+		light = light * attenuation * shadow_factor;
 	}
 
 	vec3 color = albedo.xyz * light;
@@ -329,3 +395,97 @@ void main()
 	FragColor = vec4(color, albedo.a);
 }
 
+
+\lights_single.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_world_position;
+in vec3 v_normal;
+in vec2 v_uv;
+in vec4 v_color;
+
+uniform vec3 u_camera_pos;
+//material properties
+
+uniform vec4 u_color;
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_emissive_texture;
+uniform sampler2D u_metallic_roughness_texture;
+uniform vec3 u_emissive_factor;
+
+//light properties
+
+#define NO_LIGHT 0.0
+#define POINT_LIGHT 1.0
+#define SPOT_LIGHT 2.0
+#define DIRECTIONAL_LIGHT 3.0
+
+uniform vec3 u_ambient_light;
+
+const int MAX_LIGHTS = 12;
+uniform int u_num_lights;
+uniform vec3 u_lights_pos[MAX_LIGHTS];
+uniform vec3 u_lights_color[MAX_LIGHTS];
+uniform vec4 u_lights_info[MAX_LIGHTS];
+
+//global properties
+
+uniform float u_time;
+uniform float u_alpha_cutoff;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = v_uv;
+	vec4 albedo = u_color;
+	albedo *= texture( u_albedo_texture, v_uv );
+
+	float alpha = 1 - texture(u_metallic_roughness_texture, v_uv).b;
+	float ks = texture(u_metallic_roughness_texture, v_uv).g;
+
+	if(albedo.a < u_alpha_cutoff)
+		discard;
+
+	vec3 light = vec3(0.0);
+	light += u_ambient_light; 
+
+	vec3 N = normalize(v_normal);
+
+	vec3 V = normalize(v_position - u_camera_pos);
+
+	for( int i = 0; i < MAX_LIGHTS; ++i )
+	{
+		if(i < u_num_lights)
+		{
+			if(u_lights_info[i].x == POINT_LIGHT || u_lights_info[i].x == SPOT_LIGHT)
+			{
+				//BASIC PHONG
+				vec3 L = u_lights_pos[i] - v_world_position;
+				float dist = length(L);
+				L /= dist;
+
+				//Diffuse light
+				float NdotL = dot(N,L);
+
+				light += max(NdotL, 0.0) * u_lights_color[i];
+
+				//LINEAR DISTANCE ATTENUATION
+				float attenuation = u_lights_info[i].z - dist;
+				attenuation /= u_lights_info[i].z;
+				attenuation = max(attenuation, 0.0);
+
+				light = light * attenuation;
+			}
+		}
+	}
+
+	vec3 color = albedo.xyz * light;
+
+	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	color += emissive_light;
+
+	FragColor = vec4(color, albedo.a);
+}

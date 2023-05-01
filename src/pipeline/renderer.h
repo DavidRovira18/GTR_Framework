@@ -42,6 +42,7 @@ namespace SCN {
 	enum eShaders {
 		sFLAT,
 		sTEXTURE,
+		sTEXTURE_IMPROVED,
 		sLIGHTS_MULTI,
 		sLIGHTS_SINGLE
 	};

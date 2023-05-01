@@ -30,7 +30,7 @@ std::vector<RenderCall> render_calls;
 std::vector<RenderCall> render_calls_opaque;
 eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
 //SHADER
-eShaders current_shader = eShaders::sFLAT;
+eShaders current_shader = eShaders::sTEXTURE;
 //LIGHTS
 std::vector<LightEntity*> lights;
 std::vector<LightEntity*> visible_lights;
@@ -147,7 +147,8 @@ void Renderer::setupScene(Camera* camera)
 	}
 	}
 
-	generateShadowMaps();
+	if(current_mode == eRenderMode::LIGHTS)
+		generateShadowMaps();
 }
 
 const char* Renderer::getShader(eShaders current)
@@ -156,6 +157,7 @@ const char* Renderer::getShader(eShaders current)
 	{
 		case eShaders::sFLAT: return "flat";
 		case eShaders::sTEXTURE: return "texture";
+		case eShaders::sTEXTURE_IMPROVED: return "texture_improved";
 		case eShaders::sLIGHTS_MULTI: return "lights_multi";
 		case eShaders::sLIGHTS_SINGLE: return "lights_single";
 	}
@@ -330,11 +332,14 @@ void Renderer::renderMeshWithMaterial(RenderCall* rc)
 	GFX::Shader* shader = NULL;
 	GFX::Texture* white = NULL;
 	GFX::Texture* albedo_texture = NULL;
+	GFX::Texture* emissive_texture = NULL;
+	GFX::Texture* metallic_roughness_texture = NULL;
 	Camera* camera = Camera::current;
 	
 	white = GFX::Texture::getWhiteTexture();
 	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
-
+	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture;
 	//texture = material->emissive_texture;
 	//texture = material->metallic_roughness_texture;
 	//texture = material->normal_texture;
@@ -379,9 +384,14 @@ void Renderer::renderMeshWithMaterial(RenderCall* rc)
 
 	shader->setUniform("u_color", rc->material->color);
 	shader->setUniform("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
-	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 
-	shader->setUniform("u_ambient_light", scene->ambient_light);
+	if (current_shader == eShaders::sTEXTURE_IMPROVED)
+	{
+		shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+		shader->setUniform("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
+		shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
+		shader->setUniform("u_ambient_light", scene->ambient_light);
+	}
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", rc->material->alpha_mode == SCN::eAlphaMode::MASK ? rc->material->alpha_cutoff : 0.001f);
@@ -461,6 +471,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	GFX::Texture* albedo_texture = NULL;
 	GFX::Texture* emissive_texture = NULL;
 	GFX::Texture* metallic_roughness_texture = NULL;
+	GFX::Texture* normal_texture = NULL;
 	Camera* camera = Camera::current;
 
 	black = GFX::Texture::getBlackTexture();
@@ -468,6 +479,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
 	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
 	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture; //r channel occlusion, g metallic, b roughness
+	normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
 
 	//texture = material->emissive_texture;
 	//texture = material->normal_texture;
@@ -515,7 +527,10 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	shader->setUniform("u_color", rc->material->color);	
 	shader->setTexture("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
-	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : black, 2);
+	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
+	
+	if(normal_texture)
+		shader->setTexture("u_normal_texture", normal_texture, 3);
 
 	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 
@@ -575,6 +590,7 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 
 		if (light->light_type != eLightType::DIRECTIONAL && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
 			continue;
+
 		//shared variables between types of lights
 		shader->setUniform("u_light_pos", light->root.model.getTranslation());
 		shader->setUniform("u_light_color", light->color * light->intensity);
@@ -587,7 +603,7 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 				shader->setUniform("u_light_cone", vec2(cos(light->cone_info.x * DEG2RAD), cos(light->cone_info.y * DEG2RAD)));
 		}
 
-		shader->setUniform("u_shadow_params", vec2(light->shadowmap ? 1 : 0, light->shadow_bias));
+		shader->setUniform("u_shadow_params", vec2(light->shadowmap && light->cast_shadows ? 1 : 0, light->shadow_bias));
 		if (light->shadowmap)
 		{
 			shader->setTexture("u_shadowmap", light->shadowmap, 8);
@@ -607,7 +623,7 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 
 void SCN::Renderer::renderSinglepass(GFX::Shader* shader, RenderCall* rc)
 {
-	int num_lights = visible_lights.size() + 1;
+	int num_lights = visible_lights.size();
 
 	shader->setUniform("u_num_lights", num_lights);
 	//We set 12 as max lights
@@ -619,7 +635,7 @@ void SCN::Renderer::renderSinglepass(GFX::Shader* shader, RenderCall* rc)
 	{
 		LightEntity* light = visible_lights[i];
 
-		if (light->light_type != eLightType::POINT && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
+		if (light->light_type != eLightType::POINT)
 			continue;
 
 		Vector3f light_pos = light->root.model.getTranslation();
@@ -637,6 +653,7 @@ void SCN::Renderer::renderSinglepass(GFX::Shader* shader, RenderCall* rc)
 	shader->setUniform3Array("u_lights_pos", (float*)lights_pos, 12);
 	shader->setUniform3Array("u_lights_color",(float*)lights_color, 12);
 	shader->setUniform4Array("u_lights_info", (float*)lights_info, 12);
+	
 	//do the draw call that renders the mesh into the screen
 	rc->mesh->render(GL_TRIANGLES);
 
@@ -682,16 +699,17 @@ void Renderer::showUI()
 		if (mode_current == 0)
 		{
 			current_mode = eRenderMode::FLAT;
-			current_shader = eShaders::sFLAT;
+			current_shader = eShaders::sTEXTURE;
 
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Flat", "Texture" };
-				static int shader_current = 0;
+				const char* shaders[] = { "Flat", "Texture", "Texture++"};
+				static int shader_current = current_shader;
 				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 3);
 
 				if (shader_current == 0) current_shader = eShaders::sFLAT;
 				if (shader_current == 1) current_shader = eShaders::sTEXTURE;
+				if (shader_current == 2) current_shader = eShaders::sTEXTURE_IMPROVED;
 
 				ImGui::TreePop();
 			}
@@ -703,7 +721,7 @@ void Renderer::showUI()
 			if (ImGui::TreeNode("Available Shaders"))
 			{
 				const char* shaders[] = { "Lights Multi", "Lights Single"};
-				static int shader_current = 0;
+				static int shader_current = current_shader;
 				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 1);
 
 				if (shader_current == 0)
@@ -804,21 +822,21 @@ void Renderer::storeDrawCallNoPriority(SCN::Node* node, Camera* camera)
 
 void Renderer::generateShadowMaps()
 {
-	Camera camera;
-
 	GFX::startGPULabel("Generate shadowmaps");
 
 	generate_shadowmap = true;
 
 	for (auto light : lights)
 	{
+		Camera camera;
+
 		if (!light->cast_shadows)
 			continue;
 
 		//CHECK IF LIGHT INSIDE CAMERA
 		//TODO
 
-		if (light->light_type != eLightType::SPOT)
+		if (light->light_type == eLightType::POINT)
 			continue;
 
 		if (!light->shadowmap_fbo)
@@ -828,14 +846,19 @@ void Renderer::generateShadowMaps()
 			light->shadowmap = light->shadowmap_fbo->depth_texture;
 		}
 
-		
-
 		Vector3f pos = light->root.model.getTranslation();
-		Vector3f front = light->root.model.rotateVector(Vector3f(0,0,-1));
+		Vector3f front = light->root.model.rotateVector(Vector3f(0, 0, -1));
 		Vector3f up = Vector3f(0, 1, 0);
+		//SET UP IF IT IS SPOTLIGHT
+		if (light->light_type == eLightType::SPOT)
+			camera.setPerspective(light->cone_info.y * 2, 1.0, light->near_distance, light->max_distance); //BECAUSE IS A SPOTLIGHT IT IS PERSPECTIVE CAMERA
 
+		//SET UP IF ITS DIRECTIONAL
+		if (light->light_type == eLightType::DIRECTIONAL)
+			camera.setOrthographic(-100.0f, 100.0f, -100.0f, 100.0f, light->near_distance, light->max_distance);
+		
 		camera.lookAt(pos, pos + front, up);
-		camera.setPerspective(light->cone_info.y * 2, 1.0, light->near_distance, light->max_distance); //BECAUSE IS A SPOTLIGHT IT IS PERSPECTIVE CAMERA
+
 		light->shadowmap_fbo->bind();
 
 		renderFrame(scene, &camera);

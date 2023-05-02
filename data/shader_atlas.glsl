@@ -602,11 +602,11 @@ void main()
 				//Specular light
 				if(u_lights_info[i].a == 1)
 				{
-					vec3 R = normalize(reflect(u_lights_front[i], N));
+					//vec3 R = normalize(reflect(u_lights_front[i], N));
 
-					float RdotV = max(dot(V,R), 0.0);
+					//float RdotV = max(dot(V,R), 0.0);
 
-					light += ks * pow(RdotV, alpha) * u_lights_color[i];
+					//light += ks * pow(RdotV, alpha) * u_lights_color[i];
 				}
 			}
 
@@ -627,7 +627,7 @@ void main()
 				{
 					vec3 R = normalize(reflect(L, N));
 
-					float RdotV = max(dot(V,R), 0.0);
+					float RdotV = max(dot(V,R), 0.0001);
 
 					light += ks * pow(RdotV, alpha) * u_lights_color[i];
 				}

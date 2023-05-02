@@ -400,7 +400,7 @@ void main()
 
 	float shadow_factor =  1.0;
 
-	if(u_shadow_params.x != 0)
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
 	{
 		shadow_factor = testShadow(v_world_position);
 	}
@@ -437,7 +437,7 @@ void main()
 		light += max(NdotL, 0.0) * u_light_color;
 
 		//Specular light
-		if(u_light_info.a == 1 && u_light_info.x == POINT_LIGHT)
+		if(u_light_info.a == 1 && alpha != 0.0)
 		{
 			vec3 R = normalize(-reflect(L, N));
 			float RdotV = max(dot(R,V), 0.0);
@@ -453,13 +453,6 @@ void main()
 
 		if(u_light_info.x == SPOT_LIGHT)
 		{
-			if(u_light_info.a == 1)
-			{
-				vec3 R = normalize(-reflect(L, N));
-				float RdotV = max(dot(R,V), 0.0001);
-
-				light += ks * pow(RdotV, alpha) * u_light_color;
-			}
 
 			float cos_angle = dot(u_light_front, L);
 			if(cos_angle < u_light_cone.y)
@@ -627,7 +620,7 @@ void main()
 				{
 					vec3 R = normalize(reflect(L, N));
 
-					float RdotV = max(dot(V,R), 0.0001);
+					float RdotV = max(dot(V,R), 0);
 
 					light += ks * pow(RdotV, alpha) * u_lights_color[i];
 				}

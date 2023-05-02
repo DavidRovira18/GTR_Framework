@@ -558,7 +558,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 
 	if (visible_lights.size() == 0)
 	{
-		shader->setUniform("u_light_type", (int)eLightType::NO_LIGHT);
+		shader->setUniform("u_light_info", vec4((int)eLightType::NO_LIGHT, 0, 0, 0));
 		rc->mesh->render(GL_TRIANGLES);
 		//disable shader
 		shader->disable();

@@ -420,6 +420,8 @@ void main()
 
 			//light += ks * pow(RdotV, alpha) * u_light_color;
 		}
+		
+		light *= shadow_factor;
 	}
 
 	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
@@ -469,7 +471,15 @@ void main()
 		light *= attenuation * shadow_factor;
 	}
 
-	light += u_ambient_light * occlusion; 
+	if(u_light_info.x == NO_LIGHT)
+	{
+		light = u_ambient_light * occlusion;
+	}
+
+	else
+	{
+		light += u_ambient_light * occlusion; 
+	}
 
 	vec3 color = albedo.xyz * light;
 

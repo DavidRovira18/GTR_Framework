@@ -67,6 +67,7 @@ void Renderer::setupScene(Camera* camera)
 	
 	//lights
 	lights.clear();
+	visible_lights.clear();
 
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
@@ -604,7 +605,7 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 		}
 
 		shader->setUniform("u_shadow_params", vec2(light->shadowmap && light->cast_shadows ? 1 : 0, light->shadow_bias));
-		if (light->shadowmap)
+		if (light->shadowmap && light->cast_shadows)
 		{
 			shader->setTexture("u_shadowmap", light->shadowmap, 8);
 			shader->setUniform("u_shadow_viewproj", light->shadow_viewproj);
@@ -796,7 +797,7 @@ void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
 			rc.distance_2_camera = camera->eye.distance(nodepos);
 			rc.bounding = world_bounding;
 
-			rc.material->alpha_mode == NO_ALPHA ? render_calls_opaque.push_back(rc) : render_calls.push_back(rc);
+			rc.material->alpha_mode == eAlphaMode::NO_ALPHA ? render_calls_opaque.push_back(rc) : render_calls.push_back(rc);
 		}
 	}
 
@@ -846,7 +847,7 @@ void Renderer::generateShadowMaps()
 
 	for (auto light : lights)
 	{
-		Camera camera;
+		Camera* camera = new Camera();
 
 		if (!light->cast_shadows)
 			continue;
@@ -854,7 +855,7 @@ void Renderer::generateShadowMaps()
 		//CHECK IF LIGHT INSIDE CAMERA
 		//TODO
 
-		if (light->light_type == eLightType::POINT)
+		if (light->light_type == eLightType::POINT || light->light_type == eLightType::NO_LIGHT)
 			continue;
 
 		if (!light->shadowmap_fbo)
@@ -869,21 +870,25 @@ void Renderer::generateShadowMaps()
 		Vector3f up = Vector3f(0, 1, 0);
 		//SET UP IF IT IS SPOTLIGHT
 		if (light->light_type == eLightType::SPOT)
-			camera.setPerspective(light->cone_info.y * 2, 1.0, light->near_distance, light->max_distance); //BECAUSE IS A SPOTLIGHT IT IS PERSPECTIVE CAMERA
+			camera->setPerspective(light->cone_info.y * 2, 1.0, light->near_distance, light->max_distance); //BECAUSE IS A SPOTLIGHT IT IS PERSPECTIVE CAMERA
 
 		//SET UP IF ITS DIRECTIONAL
 		if (light->light_type == eLightType::DIRECTIONAL)
-			camera.setOrthographic(-100.0f, 100.0f, -100.0f, 100.0f, light->near_distance, light->max_distance);
+		{
+			//use light area to define how big the frustum is
+			float halfarea = light->area / 2;
+			camera->setOrthographic(-halfarea, halfarea, halfarea, -halfarea, 0.1, light->max_distance);
+		}
 		
-		camera.lookAt(pos, pos + front, up);
+		camera->lookAt(pos, pos + front, up);
 
 		light->shadowmap_fbo->bind();
 
-		renderFrame(scene, &camera);
+		renderFrame(scene, camera);
 		
 		light->shadowmap_fbo->unbind();
 
-		light->shadow_viewproj = camera.viewprojection_matrix;
+		light->shadow_viewproj = camera->viewprojection_matrix;
 	}
 
 	generate_shadowmap = false;
@@ -906,7 +911,10 @@ void Renderer::renderRenderCalls(RenderCall* rc)
 		}
 		case (eRenderMode::LIGHTS):
 		{
-			renderMeshWithMaterialLight(rc);
+			if (generate_shadowmap)
+				renderMeshWithMaterialFlat(rc);
+			else
+				renderMeshWithMaterialLight(rc);
 			break;
 		}
 		}

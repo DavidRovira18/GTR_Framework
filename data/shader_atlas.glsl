@@ -18,7 +18,7 @@ in vec3 a_normal;
 in vec2 a_coord;
 in vec4 a_color;
 
-uniform vec3 u_camera_pos;
+uniform vec3 u_camera_position;
 
 uniform mat4 u_model;
 uniform mat4 u_viewprojection;
@@ -193,7 +193,7 @@ in vec2 a_coord;
 
 in mat4 u_model;
 
-uniform vec3 u_camera_pos;
+uniform vec3 u_camera_position;
 
 uniform mat4 u_viewprojection;
 
@@ -273,7 +273,7 @@ in vec3 v_normal;
 in vec2 v_uv;
 in vec4 v_color;
 
-uniform vec3 u_camera_pos;
+uniform vec3 u_camera_position;
 //material properties
 
 uniform vec4 u_color;
@@ -384,7 +384,7 @@ void main()
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float ks = texture(u_metallic_roughness_texture, v_uv).g;
-	float alpha = 1 - texture(u_metallic_roughness_texture, v_uv).b;
+	float alpha = texture(u_metallic_roughness_texture, v_uv).b;
 
 	if(albedo.a < u_alpha_cutoff)
 		discard;
@@ -396,7 +396,7 @@ void main()
 	vec3 normal_pixel = texture2D(u_normal_texture, v_uv).xyz;
 	vec3 N = perturbNormal(v_normal, v_world_position, v_uv, normal_pixel);
 	
-	vec3 V = normalize(v_position - u_camera_pos);
+	vec3 V = normalize(u_camera_position - v_world_position);
 
 	float shadow_factor =  1.0;
 
@@ -414,11 +414,11 @@ void main()
 		//Specular light
 		if(u_light_info.a == 1)
 		{
-			vec3 R = normalize(reflect(u_light_front, N));
+			//vec3 R = normalize(-reflect(u_light_front, N));
 
-			float RdotV = max(dot(V,R), 0.0);
+			//float RdotV = max(dot(R,V), 0.0);
 
-			light += ks * pow(RdotV, alpha) * u_light_color;
+			//light += ks * pow(RdotV, alpha) * u_light_color;
 		}
 	}
 
@@ -435,11 +435,10 @@ void main()
 		light += max(NdotL, 0.0) * u_light_color;
 
 		//Specular light
-		if(u_light_info.a == 1)
+		if(u_light_info.a == 1 && u_light_info.x == POINT_LIGHT)
 		{
-			vec3 R = normalize(reflect(L, N));
-
-			float RdotV = max(dot(V,R), 0.0);
+			vec3 R = normalize(-reflect(L, N));
+			float RdotV = max(dot(R,V), 0.0);
 
 			light += ks * pow(RdotV, alpha) * u_light_color;
 		}
@@ -452,15 +451,22 @@ void main()
 
 		if(u_light_info.x == SPOT_LIGHT)
 		{
+			if(u_light_info.a == 1)
+			{
+				vec3 R = normalize(-reflect(L, N));
+				float RdotV = max(dot(R,V), 0.0001);
+
+				light += ks * pow(RdotV, alpha) * u_light_color;
+			}
+
 			float cos_angle = dot(u_light_front, L);
 			if(cos_angle < u_light_cone.y)
 				attenuation = 0.0;
 			else if(cos_angle < u_light_cone.x)
 				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
-			
 		}
 		
-		light = light * attenuation * shadow_factor;
+		light *= attenuation * shadow_factor;
 	}
 
 	light += u_ambient_light * occlusion; 
@@ -484,13 +490,14 @@ in vec3 v_normal;
 in vec2 v_uv;
 in vec4 v_color;
 
-uniform vec3 u_camera_pos;
+uniform vec3 u_camera_position;
 //material properties
 
 uniform vec4 u_color;
 uniform sampler2D u_albedo_texture;
 uniform sampler2D u_emissive_texture;
 uniform sampler2D u_metallic_roughness_texture;
+uniform sampler2D u_normal_texture;
 uniform vec3 u_emissive_factor;
 
 //light properties
@@ -502,11 +509,18 @@ uniform vec3 u_emissive_factor;
 
 uniform vec3 u_ambient_light;
 
-const int MAX_LIGHTS = 12;
+const int MAX_LIGHTS = 4;
 uniform int u_num_lights;
 uniform vec3 u_lights_pos[MAX_LIGHTS];
 uniform vec3 u_lights_color[MAX_LIGHTS];
 uniform vec4 u_lights_info[MAX_LIGHTS];
+uniform vec3 u_lights_front[MAX_LIGHTS];
+uniform vec2 u_lights_cone[MAX_LIGHTS];
+
+//shadowmap
+uniform vec2 u_shadow_params; // 0 o 1 shadowmap or not, bias
+uniform sampler2D u_shadowmap;
+uniform mat4 u_shadow_viewproj;
 
 //global properties
 
@@ -515,29 +529,78 @@ uniform float u_alpha_cutoff;
 
 out vec4 FragColor;
 
+//NORMAL MAPPING
+mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
+{
+	// get edge vectors of the pixel triangle
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+	
+	// solve the linear system
+	vec3 dp2perp = cross( dp2, N );
+	vec3 dp1perp = cross( N, dp1 );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+	// construct a scale-invariant frame 
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+
+vec3 perturbNormal(vec3 N, vec3 WP, vec2 uv, vec3 normal_pixel)
+{
+	normal_pixel = normal_pixel * 255./127. - 128./127.;
+	mat3 TBN = cotangent_frame(N, WP, uv);
+	return normalize(TBN * normal_pixel);
+}
+
+
 void main()
 {
 	vec2 uv = v_uv;
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
 
-	float alpha = 1 - texture(u_metallic_roughness_texture, v_uv).b;
+	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float ks = texture(u_metallic_roughness_texture, v_uv).g;
+	float alpha = 1 - texture(u_metallic_roughness_texture, v_uv).b;
 
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
 	vec3 light = vec3(0.0);
 
-	vec3 N = normalize(v_normal);
+	//vec3 N = normalize(v_normal);
+	
+	vec3 normal_pixel = texture2D(u_normal_texture, v_uv).xyz;
+	vec3 N = perturbNormal(v_normal, v_world_position, v_uv, normal_pixel);
+	
+	vec3 V = normalize(v_position - u_camera_position);
 
-	vec3 V = normalize(v_position - u_camera_pos);
-
-	for( int i = 0; i < MAX_LIGHTS; i++ )
+	for( int i = 0; i < MAX_LIGHTS; ++i )
 	{
-		if(i <= u_num_lights)
+		if(i < u_num_lights)
 		{
-			if(u_lights_info[i].x == POINT_LIGHT)
+			if(u_lights_info[i].x == DIRECTIONAL_LIGHT)
+			{
+				//Diffuse light
+				float NdotL = dot(N,u_lights_front[i]);
+				light += max(NdotL, 0.0) * u_lights_color[i];
+
+				//Specular light
+				if(u_lights_info[i].a == 1)
+				{
+					vec3 R = normalize(reflect(u_lights_front[i], N));
+
+					float RdotV = max(dot(V,R), 0.0);
+
+					light += ks * pow(RdotV, alpha) * u_lights_color[i];
+				}
+			}
+
+			else if(u_lights_info[i].x == POINT_LIGHT || u_lights_info[i].x == SPOT_LIGHT)
 			{
 				//BASIC PHONG
 				vec3 L = u_lights_pos[i] - v_world_position;
@@ -549,17 +612,38 @@ void main()
 
 				light += max(NdotL, 0.0) * u_lights_color[i];
 
+				//Specular light
+				if(u_lights_info[i].a == 1)
+				{
+					vec3 R = normalize(reflect(L, N));
+
+					float RdotV = max(dot(V,R), 0.0);
+
+					light += ks * pow(RdotV, alpha) * u_lights_color[i];
+				}
+
 				//LINEAR DISTANCE ATTENUATION
 				float attenuation = u_lights_info[i].z - dist;
 				attenuation /= u_lights_info[i].z;
 				attenuation = max(attenuation, 0.0);
 
+
+				if(u_lights_info[i].x == SPOT_LIGHT)
+				{
+					float cos_angle = dot(u_lights_front[i], L);
+					if(cos_angle < u_lights_cone[i].y)
+						attenuation = 0.0;
+					else if(cos_angle < u_lights_cone[i].x)
+						attenuation *= (cos_angle - u_lights_cone[i].y) / (u_lights_cone[i].x - u_lights_cone[i].y);
+					
+				}
+				
 				light = light * attenuation;
 			}
 		}
 	}
 
-	light += u_ambient_light; 
+	light += u_ambient_light * occlusion; 
 
 	vec3 color = albedo.xyz * light;
 

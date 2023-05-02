@@ -35,6 +35,8 @@ eShaders current_shader = eShaders::sTEXTURE;
 std::vector<LightEntity*> lights;
 std::vector<LightEntity*> visible_lights;
 
+constexpr auto MAX_LIGHTS = 12;
+
 bool generate_shadowmap = false;
 bool show_shadowmaps = false;
 
@@ -522,8 +524,6 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	float t = getTime();
 	shader->setUniform("u_time", t);
 
-	shader->setUniform("u_camera_pos", camera->eye);
-
 	shader->setUniform("u_color", rc->material->color);	
 	shader->setTexture("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
@@ -627,33 +627,51 @@ void SCN::Renderer::renderSinglepass(GFX::Shader* shader, RenderCall* rc)
 
 	shader->setUniform("u_num_lights", num_lights);
 	//We set 12 as max lights
-	Vector3f lights_pos[12];
-	Vector3f lights_color[12];
-	Vector4f lights_info[12];
+	Vector3f lights_pos[MAX_LIGHTS];
+	Vector3f lights_color[MAX_LIGHTS];
+	Vector4f lights_info[MAX_LIGHTS];
+	Vector3f lights_front[MAX_LIGHTS];
+	Vector2f lights_cone[MAX_LIGHTS];
+	
+	Vector2f shadows_params[MAX_LIGHTS];
+	
 
 	for (int i = 0; i < visible_lights.size(); ++i)
 	{
 		LightEntity* light = visible_lights[i];
 
-		if (light->light_type != eLightType::POINT)
-			continue;
-
 		Vector3f light_pos = light->root.model.getTranslation();
-		lights_pos[i].set(light_pos.x, light_pos.y, light_pos.z);
+		lights_pos[i] = light_pos;
 
 		Vector3f light_color = light->color * light->intensity;
-		lights_color[i].set(light_color.x, light_color.y, light_color.z);
+		lights_color[i] = light_color;
 
 		//Light info 
 		int light_type = (int)light->light_type;
 		float light_near = light->near_distance;
 		float light_max = light->max_distance;
-		lights_info[i].set(light_type, light_near, light_max, enable_specular);
+		lights_info[i] = vec4(light_type, light_near, light_max, enable_specular);
+
+		if (light_type != eLightType::POINT)
+		{
+			lights_front[i] = light->root.model.rotateVector(vec3(0, 0, 1));
+			if (light_type != eLightType::DIRECTIONAL)
+				lights_cone[i] = vec2(cos(light->cone_info.x * DEG2RAD), cos(light->cone_info.y * DEG2RAD));
+		}
+
+		shader->setUniform("u_shadow_params", vec2(light->shadowmap && light->cast_shadows ? 1 : 0, light->shadow_bias));
+		if (light->shadowmap)
+		{
+			shader->setTexture("u_shadowmap", light->shadowmap, 8);
+			shader->setUniform("u_shadow_viewproj", light->shadow_viewproj);
+		}
 	}
-	shader->setUniform3Array("u_lights_pos", (float*)lights_pos, 12);
-	shader->setUniform3Array("u_lights_color",(float*)lights_color, 12);
-	shader->setUniform4Array("u_lights_info", (float*)lights_info, 12);
-	
+	shader->setUniform3Array("u_lights_pos", (float*)lights_pos, MAX_LIGHTS);
+	shader->setUniform3Array("u_lights_color",(float*)lights_color, MAX_LIGHTS);
+	shader->setUniform4Array("u_lights_info", (float*)lights_info, MAX_LIGHTS);
+	shader->setUniform3Array("u_lights_front", (float*)lights_front, MAX_LIGHTS);
+	shader->setUniform2Array("u_lights_cone", (float*)lights_cone, MAX_LIGHTS);
+
 	//do the draw call that renders the mesh into the screen
 	rc->mesh->render(GL_TRIANGLES);
 
@@ -720,7 +738,7 @@ void Renderer::showUI()
 			current_shader = eShaders::sLIGHTS_MULTI;
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Lights Multi", "Lights Single"};
+				const char* shaders[] = { "Multi", "Single"};
 				static int shader_current = current_shader;
 				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 1);
 

@@ -41,6 +41,7 @@ bool generate_shadowmap = false;
 bool show_shadowmaps = false;
 
 bool enable_specular = false;
+bool enable_normalmap = false;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -530,8 +531,12 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
 	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 	
-	if(normal_texture)
+	if (normal_texture && enable_normalmap)
+	{
 		shader->setTexture("u_normal_texture", normal_texture, 3);
+	}
+
+	shader->setUniform("u_enable_normalmaps", enable_normalmap);
 
 	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 
@@ -540,8 +545,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", rc->material->alpha_mode == SCN::eAlphaMode::MASK ? rc->material->alpha_cutoff : 0.001f);
 
-	shader->setUniform("u_enable_specular", enable_specular);
-
+	
 	if (render_wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -755,13 +759,18 @@ void Renderer::showUI()
 					current_lights_render = eLightsRender::SINGLEPASS;
 				}
 
-				ImGui::Checkbox("Enable Specular", &enable_specular);
 
 				ImGui::TreePop();
 			}
+			if (ImGui::TreeNode("Rendering parameters"))
+			{
+				ImGui::Checkbox("Enable Specular", &enable_specular);
+				if(current_shader == eShaders::sLIGHTS_MULTI)
+					ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
+				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
 
-			ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
-
+				ImGui::TreePop();
+			}
 		}
 
 		ImGui::TreePop();

@@ -298,6 +298,7 @@ uniform vec3 u_light_color;
 
 uniform vec4 u_light_info; //vec4(light_type, near_distance, max_distance, enable_specular)
 
+uniform int u_enable_normalmaps;
 //shadowmap
 uniform vec2 u_shadow_params; // 0 o 1 shadowmap or not, bias
 uniform sampler2D u_shadowmap;
@@ -390,11 +391,17 @@ void main()
 		discard;
 
 	vec3 light = vec3(0.0);
-
-	//vec3 N = normalize(v_normal);
+	vec3 N = vec3(0.0);
+	if(u_enable_normalmaps == 1)
+	{
+		vec3 normal_pixel = texture2D(u_normal_texture, v_uv).xyz;
+		N = perturbNormal(v_normal, v_world_position, v_uv, normal_pixel);
+	}
 	
-	vec3 normal_pixel = texture2D(u_normal_texture, v_uv).xyz;
-	vec3 N = perturbNormal(v_normal, v_world_position, v_uv, normal_pixel);
+	else
+	{
+		N = normalize(v_normal);
+	}
 	
 	vec3 V = normalize(u_camera_position - v_world_position);
 
@@ -616,11 +623,11 @@ void main()
 				light += max(NdotL, 0.0) * u_lights_color[i];
 
 				//Specular light
-				if(u_lights_info[i].a == 1)
+				if(u_lights_info[i].a == 1 && alpha != 0.0)
 				{
 					vec3 R = normalize(reflect(L, N));
 
-					float RdotV = max(dot(V,R), 0);
+					float RdotV = max(dot(V,R), 0.0);
 
 					light += ks * pow(RdotV, alpha) * u_lights_color[i];
 				}

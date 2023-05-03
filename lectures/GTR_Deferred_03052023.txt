@@ -1,0 +1,75 @@
+//DEFERRED RENDERING
+
+eRenderMode add DEFERRED -> also add it to the ImGUI.
+
+add to Renderer::Renderer
+	sphere.createSphere(1.0f)
+	sphere.uploadToVRAM()
+
+//modify renderFrame
+{
+	if(render_mode == eRenderMode::DEFERRED)
+		renderDeferred
+	else
+		renderForward (which is the same it was renderFrame before)
+}
+
+//IT MAY BE USEFUL CREATE A FUNCTION TO PASS LIGHT INFO TO SHADER lightToShader.
+//render deferred function
+void SCN::Renderer::renderDeferred(SCN, CAM)
+{
+	1.GENERATE THE GBUFFERS
+		- We need here a FBO (which will be global)
+		- If its null, initialize the FBO and its textures (gbuffers_fbo(size.x, size.y, 3 textures, GL_RGBA, GL_UNSIGNED_BYTE, true))
+			* Problem here if we change the size of the screen. We should delete the fbo and create it once again with the new size
+		- We bind to render to the texture (fbo->bind)
+			1. CLEAR BUFFER (glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //gbuffers_fbo->enableBuffers() to modify only the desired values. Important for glClear. Sure to not clear that we dont change the normal. Finally gbuffers_fbo->enableAllBuffers().
+			2. RENDER MESH WITH MATERIAL GBUFFERS (very similar to the texture one but not blending DEFERRED does not use blending and using a gbuffer shader, dont render alpha objects) 
+			3. IMPORTANT BEING ABLE TO VISUALIZE THE BUFFERS (cool to render all 4 buffers in the screen, use the linear_depth shader to render the depth texture)
+	2.COMPUTE ILLUMINATION
+		- We need here a FBO too (which will be global)
+			1. CLEAR THE SCENE
+			2. RENDER SKYBOX
+			3. //FOR A GLOBAL ILLUMINATION 
+				3.1. RENDER FULL SCREEN QUAD (GFX::Mesh* quad = GFX::Mesh::getQuad()) USING A DIFFERENT SIMPLE SHADER deferred_global.fs (WE CAN NOT USE THE basic.vs AND MUST USE THE quad.vs)
+			4. //FOR A PHONG ILLUMINATION ITERATE LIGHTS
+				4.1 lightToShader, and pass the u_inverse_viewprojection camera->inverse_viewprojection_matrix
+				4.2 renderQuad but with a different shader
+}
+
+//shader gbuffers.fs super similar to texture.fs
+	//DRAW TO DIFFERENT BUFFERS
+	layout(location = 0) out vec4 FragColor;
+	layout(location = 1) out vec4 NormalColor;
+	layout(location = 2) out vec4 ExtraColor;
+	
+	N = normalize(v_normal)
+	FragColor = (color.xyz,1.0); 
+	NormalColor = vec4(N * 0.5 + vec3(0.5),1.0); //GOING FROM 0 to 1  
+	ExtraColor = vec4(emissive, 1.0) 
+	
+	//WE CAN USE ALPHA CHANNELS FOR OTHER IMPORTANT INFO AS ROUGHNESS, METALNESS, ...
+	
+//shader deferred_global.fs
+	in vec2 v_uv //WE ONLY GET THIS FROM THE VS
+	
+	uniform sampler2D u_albedo_texture;
+	.
+	.
+	.
+	FOR ALL THE GBUFFERS
+	
+	uniform vec3 u_ambient_ligt;
+	
+	float depth = u_depth_texture.x;
+	if(depth == 1.0)
+		discard; //THIS PIXELS WILL BE THE SKYBOX
+	
+	vec4 N = normalize(normal_info.xyz*2.0 - vec3(1.0));
+	
+	vec4 color = vec4(0.0);
+	color += emissive (extra_texture.xyz) + ambient + albedo;
+	
+	FragColor = color;
+	gl_FragDepth = depth; //COPIES THE DEPTH WE HAD BEFORE TO THE ACTUAL ONE WHICH WAS INFINITE FOR EVERY PIXEL
+	

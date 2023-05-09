@@ -23,6 +23,7 @@ std::string CORE::base_path;
 
 CORE::BaseApplication* CORE::BaseApplication::instance = nullptr;
 
+
 CORE::BaseApplication::BaseApplication()
 {
 	window = nullptr;
@@ -36,6 +37,7 @@ CORE::BaseApplication::BaseApplication()
 	elapsed_time = 0;
 	fps = 0;
 	must_exit = false;
+	window_resized = false;
 
 	vec2 window_size = CORE::getWindowSize();
 	this->window_width = (int)window_size.x;
@@ -227,6 +229,7 @@ void CORE::mainLoop(CORE::Window* window, BaseApplication* app)
 				switch (sdlEvent.window.event) {
 				case SDL_WINDOWEVENT_RESIZED: //resize opengl context
 					app->onResize(sdlEvent.window.data1, sdlEvent.window.data2);
+					app->window_resized = true;
 					break;
 				}
 				break;

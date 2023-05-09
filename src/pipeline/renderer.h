@@ -31,7 +31,8 @@ namespace SCN {
 
 	enum eRenderMode {
 		FLAT,
-		LIGHTS
+		LIGHTS,
+		DEFERRED
 	};
 
 	enum eLightsRender {
@@ -76,7 +77,9 @@ namespace SCN {
 
 		//renders several elements of the scene
 		void renderScene(SCN::Scene* scene, Camera* camera);
-		void renderFrame(SCN::Scene* scene, Camera* camera);
+
+		void renderFrameForward(SCN::Scene* scene, Camera* camera);
+		void renderFrameDeferred(SCN::Scene* scene, Camera* camera);
 
 		void generateShadowMaps();
 
@@ -99,13 +102,21 @@ namespace SCN {
 
 		void renderSinglepass(GFX::Shader* shader, RenderCall* rc);
 
+		void renderDeferredGBuffers(RenderCall* rc);
+		void renderDeferred(RenderCall* rc);
+
 		void showUI();
 
+		void showGBuffers(vec2 window_size, Camera* camera);
+
 		void cameraToShader(Camera* camera, GFX::Shader* shader); //sends camera uniforms to shader
+		void lightToShader(LightEntity* light, GFX::Shader* shader); //sends light uniforms to shader
 
 		void storeDrawCall(SCN::Node* node, Camera* camera);
 
 		void storeDrawCallNoPriority(SCN::Node* node, Camera* camera);
+
+		void prioritySwitch();
 
 		void renderRenderCalls(RenderCall* rc);
 

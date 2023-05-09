@@ -25,6 +25,8 @@ namespace CORE {
 		float elapsed_time;
 		int fps;
 		bool must_exit;
+		//added this to detect window resize
+		bool window_resized;
 
 		BaseApplication();
 

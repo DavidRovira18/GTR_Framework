@@ -1,54 +1,94 @@
-﻿  core.cpp
-  input.cpp
-  math.cpp
-  task.cpp
-  ui.cpp
+﻿  application.cpp
   editor.cpp
-  cJSON.cpp
-  box.cpp
-  box_bld.cpp
-  coldet.cpp
-  coldet_bld.cpp
-  math3d.cpp
-  mytritri.cpp
-  sysdep.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\math.cpp(136,4): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\math.cpp(126): message : al compilar la función del miembro clase plantilla "void Vector3<float>::parseFromText(const char *,const char)"
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\math.h(252): message : Vea la referencia a la creación de una instancia de clase plantilla "Vector3<float>" que se está compilando (compilando archivo de origen ..\..\src\core\math.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\coldet\coldet.cpp(374,10): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-  tritri.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\coldet\box_bld.cpp(134,21): warning C4018: '<': no coinciden signed/unsigned
-  hdre.cpp
-  imgui.cpp
-  ImGuizmo.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_impl_opengl3.cpp
-  imgui_impl_sdl2.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  jpgd.cpp
-  picopng.cpp
-  textparser.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\input.cpp(60,6): warning C4101: 'window_width': variable local sin referencia
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\input.cpp(60,20): warning C4101: 'window_height': variable local sin referencia
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\input.cpp(140,24): warning C4244: '=': conversión de 'float' a 'char'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\input.cpp(148,19): warning C4305: 'inicializando': truncamiento de 'double' a 'float'
-  application.cpp
-  fbo.cpp
-  gfx.cpp
-  mesh.cpp
-  shader.cpp
-  sphericalharmonics.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\core\ui.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\core\ui.cpp)
-  texture.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\ui.cpp(97,71): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\ui.cpp(97,98): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\ui.cpp(203,31): warning C4305: 'inicializando': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\ui.cpp(249,27): warning C4244: '=': conversión de 'float' a 'int64'; posible pérdida de datos
+  main.cpp
+  renderer.cpp
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(79,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(102,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(121,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(140,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(218,36): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(218,28): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(313,20): warning C4018: '<': no coinciden signed/unsigned
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\editor.cpp)
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\editor.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(376,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(516,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\application.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\application.cpp)
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(544,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(582,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(592,53): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(598,83): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(598,48): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(601,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(634,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(648,25): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(654,65): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(654,30): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(657,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(724,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(862,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(895,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(905,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(915,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(922,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(932,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(939,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(987,94): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(1060,31): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(1060,23): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(116,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(133,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(140,18): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
@@ -61,6 +101,8 @@ C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(144,34): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(201,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(289,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\application.cpp(82,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\application.cpp(83,20): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(304,39): warning C4244: '=': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
@@ -88,336 +130,12 @@ C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(550,84): warning C4305: 'argumento': truncamiento de 'double' a 'float'
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(570,10): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
 C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\editor.cpp(572,86): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\core.cpp(156,48): warning C4244: '=': conversión de 'GLuint64' a 'long'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\core\core.cpp(206,46): warning C4244: '=': conversión de 'Sint32' a 'float'; posible pérdida de datos
-  main.cpp
-  animation.cpp
-  camera.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\hdre.cpp(140,11): warning C4244: '=': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\hdre.cpp(200,11): warning C4244: '=': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\hdre.cpp(108,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  light.cpp
-  material.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\fbo.cpp(116,25): warning C4244: '=': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\fbo.cpp(117,26): warning C4244: '=': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\fbo.cpp(147,25): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\application.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\application.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(26,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(27,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(30,27): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(31,27): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\application.cpp(82,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\application.cpp(83,20): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(88,60): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(88,54): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(88,51): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(88,48): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(102,79): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(102,60): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\sphericalharmonics.cpp(102,41): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\gfx.cpp(147,38): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\gfx.cpp(147,31): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\gfx.cpp(147,24): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\gfx.cpp(147,17): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\gfx.cpp(173,15): warning C4244: 'argumento': conversión de 'int' a 'GLfloat'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(501,1): warning C4005: 'glGenBuffersARB': redefinición de macro
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7631): message : vea la definición anterior de 'glGenBuffersARB' (compilando archivo de origen ..\..\src\gfx\mesh.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(502,1): warning C4005: 'glBindBufferARB': redefinición de macro
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7627): message : vea la definición anterior de 'glBindBufferARB' (compilando archivo de origen ..\..\src\gfx\mesh.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(503,1): warning C4005: 'glBufferDataARB': redefinición de macro
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7628): message : vea la definición anterior de 'glBufferDataARB' (compilando archivo de origen ..\..\src\gfx\mesh.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(504,1): warning C4005: 'GL_ARRAY_BUFFER_ARB': redefinición de macro
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7582): message : vea la definición anterior de 'GL_ARRAY_BUFFER_ARB' (compilando archivo de origen ..\..\src\gfx\mesh.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(505,1): warning C4005: 'GL_STATIC_DRAW_ARB': redefinición de macro
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7605): message : vea la definición anterior de 'GL_STATIC_DRAW_ARB' (compilando archivo de origen ..\..\src\gfx\mesh.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(783,6): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(900,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1155,51): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1177,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1181,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1191,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1339,27): warning C4244: 'argumento': conversión de 'double' a 'const unsigned int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1340,23): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1288,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1374,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1387,18): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1389,18): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1395,14): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1398,15): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1400,15): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1411,33): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1412,33): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1413,33): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1414,33): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1440,29): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1543,41): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1543,26): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1545,45): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1545,32): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1546,32): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1553,45): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1553,32): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1555,44): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1596,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\mesh.cpp(1605,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\shader.cpp(310,27): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(24,51): warning C4244: 'argumento': conversión de 'unsigned int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(24,9): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(25,56): warning C4244: 'argumento': conversión de 'unsigned int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(25,9): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(30,15): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(31,15): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(38,55): warning C4244: 'argumento': conversión de 'unsigned int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(38,9): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(39,57): warning C4244: 'argumento': conversión de 'unsigned int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(39,9): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(44,15): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(45,15): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(361,95): warning C4244: 'argumento': conversión de 'float' a 'GLsizei'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(361,88): warning C4244: 'argumento': conversión de 'float' a 'GLsizei'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(731,18): warning C4244: '=': conversión de 'float' a 'unsigned int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(732,19): warning C4244: '=': conversión de 'float' a 'unsigned int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(783,19): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(779,12): warning C4101: 'bytesPerPixel': variable local sin referencia
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(892,6): warning C4101: 'actual_comps': variable local sin referencia
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(920,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(992,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(1006,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(1025,18): warning C4244: '=': conversión de 'float' a 'unsigned int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\gfx\texture.cpp(1026,19): warning C4244: '=': conversión de 'float' a 'unsigned int'; posible pérdida de datos
-  prefab.cpp
-  renderer.cpp
-  scene.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\main.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\main.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\camera.cpp(114,11): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\camera.cpp(123,13): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(44,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(189,32): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(191,47): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(191,12): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(275,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(316,6): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(393,26): warning C4244: '=': conversión de '_Ty' a 'int'; posible pérdida de datos
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(394,31): warning C4244: '=': conversión de '_Ty' a 'int'; posible pérdida de datos
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(412,14): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(417,21): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(433,36): warning C4244: '=': conversión de '_Ty' a 'int8'; posible pérdida de datos
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\animation.cpp(374,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  gltf_loader.cpp
-  utils.cpp
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\light.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\light.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\light.cpp(15,21): warning C4305: '=': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\light.cpp(16,21): warning C4305: '=': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\scene.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\scene.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(771,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1006,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1010,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1005,3): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1415,3): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1420,3): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1965,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(1975,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cgltf.h(2054,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compilando archivo de origen ..\..\src\utils\gltf_loader.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(45,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(59,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(67,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(83,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(113,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(142,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\prefab.cpp(214,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(73,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(96,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(115,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(134,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(203,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(213,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(220,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(230,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(237,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(323,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(386,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(526,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(554,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(592,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(602,53): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(608,83): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(608,48): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(611,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(644,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(658,25): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(664,65): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(664,30): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(667,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(814,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(847,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(889,94): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(955,31): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(955,23): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
-          with
-          [
-              T=float
-          ]
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.cpp(32,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.cpp(119,16): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.cpp(124,34): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\scene.cpp(242,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\utils.cpp(81,13): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\utils.cpp(106,7): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\utils.cpp(123,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\utils.cpp(373,17): warning C4244: 'return': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\gltf_loader.cpp(57,25): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\gltf_loader.cpp(71,25): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\gltf_loader.cpp(247,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\gltf_loader.cpp(600,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\utils\gltf_loader.cpp(605,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
      Creando biblioteca ..\..\GTR.lib y objeto ..\..\GTR.exp
 LINK : warning LNK4098: la biblioteca predeterminada'LIBCMT' entra en conflicto con otras bibliotecas; use la biblioteca /NODEFAULTLIB:biblioteca
   Generando código
-  Previous IPDB not found, fall back to full compilation.
-C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\src\pipeline\renderer.cpp(168): warning C4715: 'SCN::Renderer::getShader': no todas las rutas de acceso de control devuelven un valor
-  All 5925 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  763 of 5927 functions (12.9%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    443 functions had inline decision re-evaluated but remain unchanged
   Generación de código finalizada
 glew32s.lib(glew.obj) : warning LNK4099: no se encontró PDB 'vc120.pdb' con 'glew32s.lib(glew.obj)' o en 'C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\vc120.pdb'; se vinculará el objeto sin tener en cuenta información de depuración
   visualstudio.vcxproj -> C:\Users\david\Desktop\Universitat\2022-2023\3r-Trimestre\GTR\GTR_Framework\GTR.exe

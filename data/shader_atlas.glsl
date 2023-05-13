@@ -351,6 +351,7 @@ float dither4x4(vec2 position, float brightness)
 \texture_improved.fs
 
 #version 330 core
+#extension GL_NV_shadow_samplers_cube : enable
 
 in vec3 v_position;
 in vec3 v_world_position;
@@ -367,8 +368,8 @@ uniform vec3 u_emissive_factor;
 //FOR REFLECTIONS
 uniform samplerCube u_skybox;
 uniform vec3 u_camera_position;
-//uniform float u_enable_reflections;
-uniform float u_reflections_factor;
+
+uniform vec3 u_reflections_info; //enable_reflections, reflections_factor, enable_fresnel
 
 uniform vec3 u_ambient_light;
 
@@ -394,16 +395,24 @@ void main()
 
 	albedo.xyz *= ambient_light; 
 
-
+	if(u_reflections_info.x == 1)
+	{
 		//compute reflected eye vector
 		vec3 N = normalize(v_normal);
 		vec3 V = normalize(u_camera_position - v_world_position);
 
 		vec3 R = reflect(N,V);
 
+		float fresnel = 1.0;
+		if(u_reflections_info.z == 1)
+		{
+			fresnel = 1.0 - max(dot(N,V), 0.0);
+			fresnel = pow(fresnel, 2.0);
+		}
+
 		//fetch the color from the texture
-		albedo += textureCube( u_skybox, R ) * u_reflections_factor;
-	
+		albedo += textureCube( u_skybox, R ) * u_reflections_info.y * fresnel;
+	}
 
 	FragColor = albedo;
 }

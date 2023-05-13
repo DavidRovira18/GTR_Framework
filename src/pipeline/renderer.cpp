@@ -53,6 +53,7 @@ bool enable_normalmap = false;
 
 bool enable_reflections = false;
 float reflections_factor = 0.0f;
+bool enable_fresnel = false;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -418,8 +419,7 @@ void Renderer::renderMeshWithMaterial(RenderCall* rc)
 
 		cameraToShader(camera, shader);
 
-		//shader->setUniform("u_enable_reflections", enable_reflections);
-		shader->setUniform("u_reflections_factor", reflections_factor);
+		shader->setUniform3("u_reflections_info", vec3(enable_reflections, reflections_factor, enable_fresnel));
 	}
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
@@ -935,6 +935,7 @@ void Renderer::showUI()
 					current_shader = eShaders::sTEXTURE_IMPROVED;
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
 					ImGui::SliderFloat("Reflection intensity ", &reflections_factor, 0.0, 1.0);
+					ImGui::Checkbox("Enable fresnel", &enable_fresnel);
 				}
 				ImGui::TreePop();
 			}

@@ -37,7 +37,8 @@ namespace SCN {
 
 	enum eLightsRender {
 		MULTIPASS,
-		SINGLEPASS
+		SINGLEPASS,
+		MULTIPASS_TRANSPARENCIES
 	};
 
 	enum eShaders {
@@ -83,7 +84,6 @@ namespace SCN {
 
 		void generateShadowMaps();
 
-
 		//render the skybox
 		void renderSkybox(GFX::Texture* cubemap);
 	
@@ -103,7 +103,10 @@ namespace SCN {
 		void renderSinglepass(GFX::Shader* shader, RenderCall* rc);
 
 		void renderDeferredGBuffers(RenderCall* rc);
-		void renderDeferred(RenderCall* rc);
+		void renderDeferred();
+
+		void renderTransparenciesForward();
+		void renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc);
 
 		void showUI();
 

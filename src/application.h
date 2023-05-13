@@ -16,7 +16,7 @@ public:
 	Camera* camera = nullptr;
 	SCN::Scene* scene = nullptr;
 	SCN::Renderer* renderer = nullptr;
-	bool render_debug = true;
+	bool render_debug = false;
 
 	Application();
 

@@ -41,6 +41,7 @@ GFX::FBO* illumination_fbo = nullptr;
 bool generate_gbuffers = false;
 bool show_buffers = false;
 bool show_globalpos = false;
+bool enable_dithering = true;
 
 constexpr auto MAX_LIGHTS = 12;
 
@@ -49,6 +50,9 @@ bool show_shadowmaps = false;
 
 bool enable_specular = false;
 bool enable_normalmap = false;
+
+bool enable_reflections = false;
+float reflections_factor = 0.0f;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -247,7 +251,13 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		renderSkybox(skybox_cubemap);
 	
 	//render global illumination
-	prioritySwitch();
+	renderDeferred();
+
+	if (!enable_dithering)
+	{
+		current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
+		renderTransparenciesForward();
+	}
 
 	if (show_buffers)
 		showGBuffers(size, camera);
@@ -404,6 +414,12 @@ void Renderer::renderMeshWithMaterial(RenderCall* rc)
 		shader->setUniform("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 		shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 		shader->setUniform("u_ambient_light", scene->ambient_light);
+		shader->setTexture("u_skybox", skybox_cubemap,3);
+
+		cameraToShader(camera, shader);
+
+		//shader->setUniform("u_enable_reflections", enable_reflections);
+		shader->setUniform("u_reflections_factor", reflections_factor);
 	}
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
@@ -583,6 +599,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	switch (current_lights_render)
 	{
 	case(eLightsRender::MULTIPASS): renderMultipass(shader, rc); break;
+	case(eLightsRender::MULTIPASS_TRANSPARENCIES):renderMultipassTransparencies(shader, rc); break;
 	case(eLightsRender::SINGLEPASS): renderSinglepass(shader,rc); break;
 	}
 	//disable shader
@@ -683,8 +700,6 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 		return;
 	assert(glGetError() == GL_NO_ERROR);
 
-	if (rc->material->alpha_mode == eAlphaMode::BLEND)
-		return;
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
 	GFX::Texture* white = NULL;
@@ -734,12 +749,17 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 	shader->setUniform("u_alpha_cutoff", rc->material->alpha_mode == SCN::eAlphaMode::MASK ? rc->material->alpha_cutoff : 0.001f);
 
+	if (enable_dithering && rc->material->alpha_mode == eAlphaMode::BLEND)
+		shader->setUniform("u_enable_dithering", 1.0f);
+	else
+		shader->setUniform("u_enable_dithering", 0.0f);
+
 	rc->mesh->render(GL_TRIANGLES);
 
 	shader->disable();
 }
 
-void SCN::Renderer::renderDeferred(RenderCall* rc)
+void SCN::Renderer::renderDeferred()
 {
 
 	GFX::Mesh* quad = GFX::Mesh::getQuad();
@@ -755,14 +775,7 @@ void SCN::Renderer::renderDeferred(RenderCall* rc)
 
 	quad->render(GL_TRIANGLES);
 
-	for (int i = 0; i < lights.size(); ++i)
-	{
-		LightEntity* light = lights[i];
-		if (light->light_type != eLightType::DIRECTIONAL && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
-			continue;
-
-		visible_lights.push_back(light);
-	}
+	shader->disable();
 
 	//if (visible_lights.size() == 0)
 	//{
@@ -775,7 +788,6 @@ void SCN::Renderer::renderDeferred(RenderCall* rc)
 	//	return;
 	//}
 
-	shader->disable();
 
 	vec2 size = CORE::getWindowSize();
 	Camera* camera = Camera::current;
@@ -803,9 +815,10 @@ void SCN::Renderer::renderDeferred(RenderCall* rc)
 		shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
 		shader->setUniform("u_ambient_light", scene->ambient_light);
 
+		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
-		for (auto light : visible_lights)
+		for (auto light : lights)
 		{
 			lightToShader(light, shader);
 			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
@@ -846,6 +859,36 @@ void SCN::Renderer::lightToShader(LightEntity* light, GFX::Shader* shader)
 	}
 }
 
+void Renderer::renderTransparenciesForward()
+{
+	for (auto rc : render_calls)
+	{
+		renderMeshWithMaterialLight(&rc);
+	}
+}
+
+void Renderer::renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc)
+{
+	glDepthFunc(GL_LEQUAL); //render if the z is the same or closer to the camera
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	for (int i = 0; i < visible_lights.size(); ++i)
+	{
+		LightEntity* light = visible_lights[i];
+
+		if (light->light_type != eLightType::DIRECTIONAL && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
+			continue;
+
+		lightToShader(light, shader);
+
+		//do the draw call that renders the mesh into the screen
+		rc->mesh->render(GL_TRIANGLES);
+
+		shader->setUniform("u_ambient_light", vec3(0.0));
+		shader->setUniform("u_emissive_factor", vec3(0.0));
+	}
+}
+
 #ifndef SKIP_IMGUI
 
 void Renderer::showUI()
@@ -853,7 +896,6 @@ void Renderer::showUI()
 		
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::Checkbox("Boundaries", &render_boundaries);
-
 	//RENDER PRIORITY
 	if (ImGui::TreeNode("Rendering Priority"))
 	{
@@ -888,8 +930,12 @@ void Renderer::showUI()
 
 				if (shader_current == 0) current_shader = eShaders::sFLAT;
 				if (shader_current == 1) current_shader = eShaders::sTEXTURE;
-				if (shader_current == 2) current_shader = eShaders::sTEXTURE_IMPROVED;
-
+				if (shader_current == 2)
+				{
+					current_shader = eShaders::sTEXTURE_IMPROVED;
+					ImGui::Checkbox("Enable reflections", &enable_reflections);
+					ImGui::SliderFloat("Reflection intensity ", &reflections_factor, 0.0, 1.0);
+				}
 				ImGui::TreePop();
 			}
 		}
@@ -932,8 +978,16 @@ void Renderer::showUI()
 		{
 			current_mode = eRenderMode::DEFERRED;
 
-			ImGui::Checkbox("Show Buffers", &show_buffers);
-			ImGui::Checkbox("Show Global Pos", &show_globalpos);
+			if (ImGui::TreeNode("Deferred Parameters"))
+			{
+				ImGui::Checkbox("Show Buffers", &show_buffers);
+				ImGui::Checkbox("Show Global Pos", &show_globalpos);
+					
+				if(current_priority != eRenderPriority::NOPRIORITY )
+					ImGui::Checkbox("Dithering", &enable_dithering);
+				
+				ImGui::TreePop();
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -1158,8 +1212,6 @@ void Renderer::renderRenderCalls(RenderCall* rc)
 		{
 			if (generate_gbuffers)
 				renderDeferredGBuffers(rc);
-			else
-				renderDeferred(rc);
 			break;
 		}
 		}

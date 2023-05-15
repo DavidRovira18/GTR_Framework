@@ -164,7 +164,7 @@ void Renderer::setupScene(Camera* camera)
 	}
 	}
 
-	if(current_mode == eRenderMode::LIGHTS)
+	if(current_mode != eRenderMode::FLAT)
 		generateShadowMaps();
 }
 
@@ -1040,17 +1040,24 @@ void Renderer::showUI()
 		if (mode_current == 2)
 		{
 			current_mode = eRenderMode::DEFERRED;
+			if (ImGui::TreeNode("Rendering parameters"))
+			{
+				ImGui::Checkbox("Enable specular", &enable_specular);
+
+				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
+
+				ImGui::Checkbox("Show shadowmaps", &show_shadowmaps);
+
+				ImGui::TreePop();
+			}
 
 			if (ImGui::TreeNode("Deferred Parameters"))
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
-				ImGui::Checkbox("Enable specular", &enable_specular);
-					
-				if(current_priority != eRenderPriority::NOPRIORITY )
+
+				if (current_priority != eRenderPriority::NOPRIORITY)
 					ImGui::Checkbox("Dithering", &enable_dithering);
-				
-				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
 
 				ImGui::TreePop();
 			}
@@ -1276,6 +1283,9 @@ void Renderer::renderRenderCalls(RenderCall* rc)
 		}
 		case (eRenderMode::DEFERRED):
 		{
+			if (generate_shadowmap)
+				renderMeshWithMaterialFlat(rc);
+
 			if (generate_gbuffers)
 				renderDeferredGBuffers(rc);
 			break;

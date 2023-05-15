@@ -1074,6 +1074,7 @@ uniform sampler2D u_extra_texture;
 uniform sampler2D u_depth_texture;
 
 #include "lights"
+#include "shadowmaps"
 
 uniform vec2 u_iRes;
 out vec4 FragColor;
@@ -1102,7 +1103,12 @@ void main()
 	vec3 light = vec3(0.0);
 	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
 
-	float shadow_factor = 1.0;
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
+	{
+		shadow_factor = testShadow(world_pos);
+	}
 
 	vec3 V = normalize(world_pos - u_camera_position);
 
@@ -1181,6 +1187,7 @@ uniform sampler2D u_extra_texture;
 uniform sampler2D u_depth_texture;
 
 #include "lights"
+#include "shadowmaps"
 
 uniform vec2 u_iRes;
 out vec4 FragColor;
@@ -1209,7 +1216,12 @@ void main()
 	vec3 light = vec3(0.0);
 	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
 
-	float shadow_factor = 1.0;
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
+	{
+		shadow_factor = testShadow(world_pos);
+	}
 
 	vec3 V = normalize(world_pos - u_camera_position);
 

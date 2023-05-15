@@ -14,7 +14,9 @@ lights_single basic.vs lights_single.fs
 gbuffers basic.vs gbuffers.fs
 deferred_global quad.vs deferred_global.fs
 deferred_globalpos quad.vs deferred_globalpos.fs
+deferred_light_geometry basic.vs deferred_light_geometry.fs
 deferred_light quad.vs deferred_light.fs
+
 
 \basic.vs
 
@@ -1017,8 +1019,6 @@ void main()
 	vec3 albedo = texture(u_albedo_texture, uv).rgb;
 	vec3 emissive_light = texture(u_extra_texture, uv).rgb;
 	float occlusion = texture(u_albedo_texture, uv).a;
-	//vec3 normal = texture(u_normal_texture, uv).rgb;
-	//vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
 
 	albedo *= u_ambient_light * occlusion;
 	color.xyz += emissive_light + albedo;
@@ -1160,4 +1160,113 @@ void main()
 	vec3 color = albedo.xyz * light;
 
 	FragColor = vec4(color, 1.0);
+	//FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+}
+
+\deferred_light_geometry.fs
+
+#version 330 core
+in vec2 v_uv;
+
+
+uniform vec3 u_camera_position;
+uniform mat4 u_ivp;
+
+//material properties
+
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+uniform sampler2D u_depth_texture;
+
+#include "lights"
+
+uniform vec2 u_iRes;
+out vec4 FragColor;
+
+void main()
+{
+	//vec2 uv = v_uv;
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 albedo = texture(u_albedo_texture, uv).rgb;
+	vec3 emissive_light = texture(u_extra_texture, uv).rgb;
+	vec3 normal = texture(u_normal_texture, uv).rgb;
+	float ks = texture(u_normal_texture, uv).a;
+	float alpha = texture(u_extra_texture, uv).a;
+
+	vec3 light = vec3(0.0);
+	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+
+	float shadow_factor = 1.0;
+
+	vec3 V = normalize(world_pos - u_camera_position);
+
+	if(u_light_info.x == DIRECTIONAL_LIGHT)
+	{
+		light += compute_lambertian(N,u_light_front);
+
+		//Specular light
+		if(u_light_info.a == 1 && alpha != 0.0)
+		{
+			vec3 R = normalize(-reflect(u_light_front, N));
+
+			light += compute_specular_phong(R, V, ks, alpha);
+		}
+		
+		light *= shadow_factor;
+	}
+
+	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
+	{
+		//BASIC PHONG
+		vec3 L = u_light_pos - world_pos;
+		float dist = length(L);
+		L /= dist;
+
+		light += compute_lambertian(N,L);
+
+		//Specular light
+		if(u_light_info.a == 1 && alpha != 0.0)
+		{
+			vec3 R = normalize(-reflect(L, N));
+			
+			light += compute_specular_phong(R, V, ks, alpha);
+		}
+
+		//LINEAR DISTANCE ATTENUATION
+		float attenuation = u_light_info.z - dist;
+		attenuation /= u_light_info.z;
+		attenuation = max(attenuation, 0.0);
+
+
+		if(u_light_info.x == SPOT_LIGHT)
+		{
+
+			float cos_angle = dot(u_light_front, L);
+			if(cos_angle < u_light_cone.y)
+				attenuation = 0.0;
+			else if(cos_angle < u_light_cone.x)
+				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
+		}
+		
+		light *= attenuation * shadow_factor;
+	}
+
+	vec3 color = albedo.xyz * light;
+
+	FragColor = vec4(color, 1.0);
+	//FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
 }

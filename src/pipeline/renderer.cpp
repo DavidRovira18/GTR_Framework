@@ -786,7 +786,8 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 
 void SCN::Renderer::renderDeferred()
 {
-
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
 	GFX::Mesh* quad = GFX::Mesh::getQuad();
 
 	GFX::Shader* shader = GFX::Shader::Get("deferred_global");
@@ -819,17 +820,42 @@ void SCN::Renderer::renderDeferred()
 
 	else
 	{
+		for (auto light : lights)
+		{
+			if (light->light_type == eLightType::DIRECTIONAL)
+			{
+				shader = GFX::Shader::Get("deferred_light");
+				shader->enable();
+
+				shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
+				shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+				shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
+				shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
+				cameraToShader(camera, shader);
+				glDisable(GL_DEPTH_TEST);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_ONE, GL_ONE);
+				lightToShader(light, shader);
+				shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+				shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
+				quad->render(GL_TRIANGLES);
+			}
+		}
 		//ESFERAS
-		/*shader = GFX::Shader::Get("deferred_light");
+		shader = GFX::Shader::Get("deferred_light_geometry");
 		shader->enable();
 
 		shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
 		shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
 		shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
 		shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
+		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 		cameraToShader(camera, shader);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
+		glDepthMask(false);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		for (auto light : lights)
@@ -837,13 +863,10 @@ void SCN::Renderer::renderDeferred()
 			if (light->light_type == eLightType::DIRECTIONAL)
 				continue;
 			lightToShader(light, shader);
-			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+			
 
 			vec3 center = light->root.model.getTranslation();
 			float radius = light->max_distance;
-			GFX::Mesh s;
-			s.createSphere(radius);
 
 			Matrix44 model;
 			model.setTranslation(center.x, center.y, center.z);
@@ -852,29 +875,12 @@ void SCN::Renderer::renderDeferred()
 			shader->setUniform("u_model", model);
 
 			glFrontFace(GL_CW);
-			s.render(GL_TRIANGLES);*/
-
-			shader = GFX::Shader::Get("deferred_light");
-			shader->enable();
-
-			shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
-			shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
-			shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
-			shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
-			cameraToShader(camera, shader);
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_ONE, GL_ONE);
-			for (auto light : lights)
-			{
-				lightToShader(light, shader);
-				shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-				shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
-
-				quad->render(GL_TRIANGLES);
+			sphere.render(GL_TRIANGLES);
 		}
-		//glFrontFace(GL_CCW);
+		glFrontFace(GL_CCW);
 		glDisable(GL_BLEND);
+		glDepthMask(true);
+
 	}
 
 }
@@ -1022,7 +1028,7 @@ void Renderer::showUI()
 			}
 			if (ImGui::TreeNode("Rendering parameters"))
 			{
-				if(!current_shader == eShaders::sLIGHTS_PBR)
+				if(current_shader != eShaders::sLIGHTS_PBR)
 					ImGui::Checkbox("Enable Specular", &enable_specular);
 				if(current_shader == eShaders::sLIGHTS_MULTI)
 					ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
@@ -1039,6 +1045,7 @@ void Renderer::showUI()
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
+				ImGui::Checkbox("Enable specular", &enable_specular);
 					
 				if(current_priority != eRenderPriority::NOPRIORITY )
 					ImGui::Checkbox("Dithering", &enable_dithering);

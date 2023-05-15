@@ -46,7 +46,8 @@ namespace SCN {
 		sTEXTURE,
 		sTEXTURE_IMPROVED,
 		sLIGHTS_MULTI,
-		sLIGHTS_SINGLE
+		sLIGHTS_SINGLE,
+		sLIGHTS_PBR
 	};
 
 	enum eRenderPriority {

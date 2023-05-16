@@ -351,7 +351,6 @@ float dither4x4(vec2 position, float brightness)
 \texture_improved.fs
 
 #version 330 core
-#extension GL_NV_shadow_samplers_cube : enable
 
 in vec3 v_position;
 in vec3 v_world_position;
@@ -411,7 +410,7 @@ void main()
 		}
 
 		//fetch the color from the texture
-		albedo += textureCube( u_skybox, R ) * u_reflections_info.y * fresnel;
+		albedo += texture( u_skybox, R ) * u_reflections_info.y * fresnel;
 	}
 
 	FragColor = albedo;

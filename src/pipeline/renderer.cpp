@@ -164,7 +164,7 @@ void Renderer::setupScene(Camera* camera)
 	}
 	}
 
-	if(current_mode == eRenderMode::LIGHTS)
+	if(current_mode != eRenderMode::FLAT)
 		generateShadowMaps();
 }
 
@@ -177,6 +177,7 @@ const char* Renderer::getShader(eShaders current)
 		case eShaders::sTEXTURE_IMPROVED: return "texture_improved";
 		case eShaders::sLIGHTS_MULTI: return "lights_multi";
 		case eShaders::sLIGHTS_SINGLE: return "lights_single";
+		case eShaders::sLIGHTS_PBR: return "light_pbr";
 	}
 }
 
@@ -229,6 +230,13 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		CORE::BaseApplication::instance->window_resized = false;
 	}
 
+	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
+	{
+		illumination_fbo = new GFX::FBO();
+		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
 	camera->enable();
 	gbuffers_fbo->bind();
 
@@ -243,25 +251,33 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 
 	generate_gbuffers = false;
 
-	//Compute illumination
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//render skybox
-	if (skybox_cubemap)
-		renderSkybox(skybox_cubemap);
-	
-	//render global illumination
-	renderDeferred();
-
-	if (!enable_dithering)
-	{
-		current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
-		renderTransparenciesForward();
-	}
-
 	if (show_buffers)
 		showGBuffers(size, camera);
+	else{
+		//Compute illumination
+		illumination_fbo->bind();
+
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (skybox_cubemap)
+			renderSkybox(skybox_cubemap);
+
+		//render global illumination
+		renderDeferred();
+
+		illumination_fbo->unbind();
+
+		illumination_fbo->color_textures[0]->toViewport();
+		if (!enable_dithering)
+		{
+			current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
+			renderTransparenciesForward();
+		}
+	}
+	
 }
 
 void Renderer::renderSkybox(GFX::Texture* cubemap)
@@ -706,12 +722,15 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 	GFX::Texture* albedo_texture = NULL;
 	GFX::Texture* emissive_texture = NULL;
 	GFX::Texture* metallic_roughness_texture = NULL;
+	GFX::Texture* normal_texture = NULL;
 	Camera* camera = Camera::current;
 
 	white = GFX::Texture::getWhiteTexture();
 	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
 	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
 	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture;
+	normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
+
 
 	if (albedo_texture == NULL)
 		albedo_texture = white; //a 1x1 white texture
@@ -747,6 +766,12 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
 	shader->setUniform("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
+	if (normal_texture && enable_normalmap)
+	{
+		shader->setUniform("u_normal_texture", normal_texture, 3);
+	}
+	shader->setUniform("u_enable_normalmaps", enable_normalmap);
+
 	shader->setUniform("u_alpha_cutoff", rc->material->alpha_mode == SCN::eAlphaMode::MASK ? rc->material->alpha_cutoff : 0.001f);
 
 	if (enable_dithering && rc->material->alpha_mode == eAlphaMode::BLEND)
@@ -761,7 +786,8 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 
 void SCN::Renderer::renderDeferred()
 {
-
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
 	GFX::Mesh* quad = GFX::Mesh::getQuad();
 
 	GFX::Shader* shader = GFX::Shader::Get("deferred_global");
@@ -776,18 +802,6 @@ void SCN::Renderer::renderDeferred()
 	quad->render(GL_TRIANGLES);
 
 	shader->disable();
-
-	//if (visible_lights.size() == 0)
-	//{
-	//	shader->setUniform("u_light_info", vec4((int)eLightType::NO_LIGHT, 0, 0, 0));
-	//	rc->mesh->render(GL_TRIANGLES);
-	//	//disable shader
-	//	shader->disable();
-
-	//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//	return;
-	//}
-
 
 	vec2 size = CORE::getWindowSize();
 	Camera* camera = Camera::current;
@@ -806,27 +820,67 @@ void SCN::Renderer::renderDeferred()
 
 	else
 	{
-		shader = GFX::Shader::Get("deferred_light");
+		for (auto light : lights)
+		{
+			if (light->light_type == eLightType::DIRECTIONAL)
+			{
+				shader = GFX::Shader::Get("deferred_light");
+				shader->enable();
+
+				shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
+				shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+				shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
+				shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
+				cameraToShader(camera, shader);
+				glDisable(GL_DEPTH_TEST);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_ONE, GL_ONE);
+				lightToShader(light, shader);
+				shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+				shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
+				quad->render(GL_TRIANGLES);
+			}
+		}
+		//ESFERAS
+		shader = GFX::Shader::Get("deferred_light_geometry");
 		shader->enable();
 
 		shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
 		shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
 		shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
 		shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
-		shader->setUniform("u_ambient_light", scene->ambient_light);
-
-		glDisable(GL_DEPTH_TEST);
+		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+		cameraToShader(camera, shader);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(false);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		for (auto light : lights)
 		{
+			if (light->light_type == eLightType::DIRECTIONAL)
+				continue;
 			lightToShader(light, shader);
-			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+			
 
-			quad->render(GL_TRIANGLES);
+			vec3 center = light->root.model.getTranslation();
+			float radius = light->max_distance;
+
+			Matrix44 model;
+			model.setTranslation(center.x, center.y, center.z);
+			model.scale(radius, radius, radius);
+
+			shader->setUniform("u_model", model);
+
+			glFrontFace(GL_CW);
+			sphere.render(GL_TRIANGLES);
 		}
+		glFrontFace(GL_CCW);
 		glDisable(GL_BLEND);
+		glDepthMask(true);
+
 	}
 
 }
@@ -869,9 +923,9 @@ void Renderer::renderTransparenciesForward()
 
 void Renderer::renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc)
 {
-	glDepthFunc(GL_LEQUAL); //render if the z is the same or closer to the camera
+	glDepthFunc(GL_EQUAL);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	for (int i = 0; i < visible_lights.size(); ++i)
 	{
 		LightEntity* light = visible_lights[i];
@@ -946,9 +1000,9 @@ void Renderer::showUI()
 			current_shader = eShaders::sLIGHTS_MULTI;
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Multi", "Single"};
+				const char* shaders[] = { "Multi", "Single", "PBR"};
 				static int shader_current = current_shader;
-				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 1);
+				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 2);
 
 				if (shader_current == 0)
 				{
@@ -962,12 +1016,20 @@ void Renderer::showUI()
 					current_lights_render = eLightsRender::SINGLEPASS;
 				}
 
+				if (shader_current == 2)
+				{
+					current_shader = eShaders::sLIGHTS_PBR;
+					current_lights_render = eLightsRender::MULTIPASS;
+					enable_specular = true;
+				}
+
 
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Rendering parameters"))
 			{
-				ImGui::Checkbox("Enable Specular", &enable_specular);
+				if(current_shader != eShaders::sLIGHTS_PBR)
+					ImGui::Checkbox("Enable Specular", &enable_specular);
 				if(current_shader == eShaders::sLIGHTS_MULTI)
 					ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
 				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
@@ -978,15 +1040,25 @@ void Renderer::showUI()
 		if (mode_current == 2)
 		{
 			current_mode = eRenderMode::DEFERRED;
+			if (ImGui::TreeNode("Rendering parameters"))
+			{
+				ImGui::Checkbox("Enable specular", &enable_specular);
+
+				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
+
+				ImGui::Checkbox("Show shadowmaps", &show_shadowmaps);
+
+				ImGui::TreePop();
+			}
 
 			if (ImGui::TreeNode("Deferred Parameters"))
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
-					
-				if(current_priority != eRenderPriority::NOPRIORITY )
+
+				if (current_priority != eRenderPriority::NOPRIORITY)
 					ImGui::Checkbox("Dithering", &enable_dithering);
-				
+
 				ImGui::TreePop();
 			}
 		}
@@ -1211,6 +1283,9 @@ void Renderer::renderRenderCalls(RenderCall* rc)
 		}
 		case (eRenderMode::DEFERRED):
 		{
+			if (generate_shadowmap)
+				renderMeshWithMaterialFlat(rc);
+
 			if (generate_gbuffers)
 				renderDeferredGBuffers(rc);
 			break;

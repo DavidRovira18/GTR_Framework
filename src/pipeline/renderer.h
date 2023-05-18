@@ -47,7 +47,9 @@ namespace SCN {
 		sTEXTURE_IMPROVED,
 		sLIGHTS_MULTI,
 		sLIGHTS_SINGLE,
-		sLIGHTS_PBR
+		sLIGHTS_PBR,
+		sDEFERRED,
+		sDEFERRED_PBR
 	};
 
 	enum eRenderPriority {
@@ -63,6 +65,12 @@ namespace SCN {
 	public:
 		bool render_wireframe;
 		bool render_boundaries;
+
+		//TONEMAPPER
+		float tonemapper_scale;
+		float tonemapper_avg_lum;
+		float tonemapper_lumwhite;
+		float gamma;
 
 		GFX::Texture* skybox_cubemap;
 

@@ -62,6 +62,12 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	scene = nullptr;
 	skybox_cubemap = nullptr;
 
+	//TONEMAPPER
+	tonemapper_scale = 1.0;
+	tonemapper_avg_lum = 1.0;
+	tonemapper_lumwhite = 1.0;
+	gamma = 1.0;
+
 	if (!GFX::Shader::LoadAtlas(shader_atlas_filename))
 		exit(1);
 	GFX::checkGLErrors();
@@ -178,6 +184,8 @@ const char* Renderer::getShader(eShaders current)
 		case eShaders::sLIGHTS_MULTI: return "lights_multi";
 		case eShaders::sLIGHTS_SINGLE: return "lights_single";
 		case eShaders::sLIGHTS_PBR: return "light_pbr";
+		case eShaders::sDEFERRED: return "deferred_light";
+		case eShaders::sDEFERRED_PBR: return "deferred_pbr";
 	}
 }
 
@@ -233,7 +241,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		illumination_fbo = new GFX::FBO();
-		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT);
+		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT, false);
 		CORE::BaseApplication::instance->window_resized = false;
 	}
 
@@ -253,7 +261,8 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 
 	if (show_buffers)
 		showGBuffers(size, camera);
-	else{
+	else
+	{
 		//Compute illumination
 		illumination_fbo->bind();
 
@@ -270,7 +279,14 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 
 		illumination_fbo->unbind();
 
-		illumination_fbo->color_textures[0]->toViewport();
+		//TONEMAPPER
+		GFX::Shader* shader = GFX::Shader::Get("tonemapper");
+		shader->enable();
+		shader->setUniform("u_scale", tonemapper_scale);
+		shader->setUniform("u_average_lum", tonemapper_avg_lum);
+		shader->setUniform("u_lumwhite2", tonemapper_lumwhite);
+		shader->setUniform("u_igamma", 1.0f / gamma);
+		illumination_fbo->color_textures[0]->toViewport(shader);
 		if (!enable_dithering)
 		{
 			current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
@@ -820,11 +836,12 @@ void SCN::Renderer::renderDeferred()
 
 	else
 	{
+		std::string current = Renderer::getShader(current_shader);
 		for (auto light : lights)
 		{
 			if (light->light_type == eLightType::DIRECTIONAL)
 			{
-				shader = GFX::Shader::Get("deferred_light");
+				shader = GFX::Shader::Get(current.c_str());
 				shader->enable();
 
 				shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
@@ -843,7 +860,8 @@ void SCN::Renderer::renderDeferred()
 			}
 		}
 		//ESFERAS
-		shader = GFX::Shader::Get("deferred_light_geometry");
+		current += "_geometry";
+		shader = GFX::Shader::Get(current.c_str());
 		shader->enable();
 
 		shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
@@ -880,7 +898,6 @@ void SCN::Renderer::renderDeferred()
 		glFrontFace(GL_CCW);
 		glDisable(GL_BLEND);
 		glDepthMask(true);
-
 	}
 
 }
@@ -967,7 +984,7 @@ void Renderer::showUI()
 	//RENDER MODE
 	if (ImGui::TreeNode("Rendering Mode"))
 	{
-		const char* mode[] = { "Flat", "Lights", "Deferred"};
+		const char* mode[] = { "Flat", "Lights", "Deferred" };
 		static int mode_current = 0;
 		ImGui::Combo("RenderMode", &mode_current, mode, IM_ARRAYSIZE(mode), 2);
 
@@ -978,7 +995,7 @@ void Renderer::showUI()
 
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Flat", "Texture", "Texture++"};
+				const char* shaders[] = { "Flat", "Texture", "Texture++" };
 				static int shader_current = current_shader;
 				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 3);
 
@@ -1000,7 +1017,7 @@ void Renderer::showUI()
 			current_shader = eShaders::sLIGHTS_MULTI;
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Multi", "Single", "PBR"};
+				const char* shaders[] = { "Multi", "Single", "PBR" };
 				static int shader_current = current_shader;
 				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 2);
 
@@ -1028,9 +1045,9 @@ void Renderer::showUI()
 			}
 			if (ImGui::TreeNode("Rendering parameters"))
 			{
-				if(current_shader != eShaders::sLIGHTS_PBR)
+				if (current_shader != eShaders::sLIGHTS_PBR)
 					ImGui::Checkbox("Enable Specular", &enable_specular);
-				if(current_shader == eShaders::sLIGHTS_MULTI)
+				if (current_shader == eShaders::sLIGHTS_MULTI)
 					ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
 				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
 
@@ -1040,9 +1057,19 @@ void Renderer::showUI()
 		if (mode_current == 2)
 		{
 			current_mode = eRenderMode::DEFERRED;
+			current_shader = eShaders::sDEFERRED;
+			if (ImGui::TreeNode("Available shaders"))
+			{
+				const char* shaders[] = { "Phong", "PBR" };
+				static int shader_current = current_shader;
+				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 2);
+				if (shader_current == 0) current_shader = eShaders::sDEFERRED;
+				if (shader_current == 1) current_shader = eShaders::sDEFERRED_PBR;
+				ImGui::TreePop();
+			}
 			if (ImGui::TreeNode("Rendering parameters"))
 			{
-				ImGui::Checkbox("Enable specular", &enable_specular);
+				if (current_shader == eShaders::sDEFERRED) ImGui::Checkbox("Enable specular", &enable_specular);
 
 				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
 
@@ -1062,6 +1089,14 @@ void Renderer::showUI()
 				ImGui::TreePop();
 			}
 		}
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Tonemapper Parameters"))
+	{
+		ImGui::SliderFloat("Scale", &tonemapper_scale, 0.0, 2.0);
+		ImGui::SliderFloat("Average Lum", &tonemapper_avg_lum, 0.0, 2.0);
+		ImGui::SliderFloat("Lum White", &tonemapper_lumwhite, 0.0, 2.0);
+		ImGui::SliderFloat("Gamma", &gamma, 0.0, 2.0);
 		ImGui::TreePop();
 	}
 }

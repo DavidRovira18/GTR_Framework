@@ -16,8 +16,12 @@ deferred_global quad.vs deferred_global.fs
 deferred_globalpos quad.vs deferred_globalpos.fs
 deferred_light_geometry basic.vs deferred_light_geometry.fs
 deferred_light quad.vs deferred_light.fs
+deferred_pbr_geometry basic.vs deferred_pbr_geometry.fs
+deferred_pbr quad.vs deferred_pbr.fs
 
 
+//TONEMAPPER
+tonemapper quad.vs tonemapper.fs
 \basic.vs
 
 #version 330 core
@@ -1280,4 +1284,303 @@ void main()
 	FragColor = vec4(color, 1.0);
 	//FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
+}
+
+\deferred_pbr_geometry.fs
+#version 330 core
+in vec2 v_uv;
+
+
+uniform vec3 u_camera_position;
+uniform mat4 u_ivp;
+
+//material properties
+
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+uniform sampler2D u_depth_texture;
+
+#include "lights"
+#include "shadowmaps"
+
+uniform vec2 u_iRes;
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 albedo = texture( u_albedo_texture, uv ).rgb;
+
+	float occlusion = texture(u_albedo_texture, uv).a;
+	float metallic = texture(u_normal_texture, uv).a;
+	float roughness = texture(u_extra_texture, uv).b;
+
+	vec3 normal = texture(u_normal_texture, uv).rgb;
+	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+
+	//we compute the reflection in base to the color and the metalness
+	vec3 f0 = mix( vec3(0.5), albedo.xyz, metallic );
+
+	//metallic materials do not have diffuse
+	vec3 diffuseColor = (1.0 - metallic) * albedo.xyz;
+
+	vec3 light = vec3(0.0);
+	vec3 V = normalize(u_camera_position - world_pos);
+
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
+	{
+		shadow_factor = testShadow(world_pos);
+	}
+
+	if(u_light_info.x == DIRECTIONAL_LIGHT)
+	{
+		vec3 diffuse = compute_lambertian(N, u_light_front) * diffuseColor;
+
+		vec3 specular;
+		//Specular light
+		if(roughness != 0.0)
+		{
+			vec3 H = normalize( u_light_front + V );
+			float NdotH = max(dot(N,H), 0.0);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, u_light_front), 0.0);
+			float LdotH = max(dot(u_light_front, H), 0.0);
+
+			//compute the specular
+			specular = compute_specular_BRDF(roughness, f0, NdotH, NdotV, NdotL, LdotH) * u_light_color;
+		}
+
+		light += (diffuse + specular) * shadow_factor;
+	}
+
+	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
+	{
+		//BASIC PHONG
+		vec3 L = u_light_pos - world_pos;
+		float dist = length(L);
+		L /= dist;
+
+		vec3 diffuse = compute_lambertian(N,L) * diffuseColor;
+
+		vec3 specular;
+		//Specular light
+		if(roughness != 0.0)
+		{
+			vec3 H = normalize( L + V );
+			float NdotH = max(dot(N,H), 0.0);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
+			float LdotH = max(dot(L, H), 0.0);
+
+			//compute the specular
+			specular = compute_specular_BRDF(roughness, f0, NdotH, NdotV, NdotL, LdotH) * u_light_color;
+		}
+
+		light += diffuse + specular;
+
+		//LINEAR DISTANCE ATTENUATION
+		float attenuation = u_light_info.z - dist;
+		attenuation /= u_light_info.z;
+		attenuation = max(attenuation, 0.0);
+
+
+		if(u_light_info.x == SPOT_LIGHT)
+		{
+
+			float cos_angle = dot(u_light_front, L);
+			if(cos_angle < u_light_cone.y)
+				attenuation = 0.0;
+			else if(cos_angle < u_light_cone.x)
+				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
+		}
+		
+		light *= attenuation * shadow_factor;
+	}
+
+	if(u_light_info.x == NO_LIGHT)
+	{
+		light = u_ambient_light * occlusion;
+	}
+
+	else
+	{
+		light += u_ambient_light * occlusion; 
+	}
+
+	vec3 color = albedo.xyz * light;
+
+	FragColor = vec4(color, 1.0);
+}
+
+\deferred_pbr.fs
+#version 330 core
+in vec2 v_uv;
+
+
+uniform vec3 u_camera_position;
+uniform mat4 u_ivp;
+
+//material properties
+
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+uniform sampler2D u_depth_texture;
+
+#include "lights"
+#include "shadowmaps"
+
+uniform vec2 u_iRes;
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 albedo = texture( u_albedo_texture, uv ).rgb;
+
+	float occlusion = texture(u_albedo_texture, uv).a;
+	float metallic = texture(u_normal_texture, uv).a;
+	float roughness = texture(u_extra_texture, uv).b;
+
+	vec3 normal = texture(u_normal_texture, uv).rgb;
+	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+
+	//we compute the reflection in base to the color and the metalness
+	vec3 f0 = mix( vec3(0.5), albedo.xyz, metallic );
+
+	//metallic materials do not have diffuse
+	vec3 diffuseColor = (1.0 - metallic) * albedo.xyz;
+
+	vec3 light = vec3(0.0);
+	vec3 V = normalize(u_camera_position - world_pos);
+
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
+	{
+		shadow_factor = testShadow(world_pos);
+	}
+
+	if(u_light_info.x == DIRECTIONAL_LIGHT)
+	{
+		vec3 diffuse = compute_lambertian(N, u_light_front) * diffuseColor;
+
+		vec3 specular;
+		//Specular light
+		if(roughness != 0.0)
+		{
+			vec3 H = normalize( u_light_front + V );
+			float NdotH = max(dot(N,H), 0.0);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, u_light_front), 0.0);
+			float LdotH = max(dot(u_light_front, H), 0.0);
+
+			//compute the specular
+			specular = compute_specular_BRDF(roughness, f0, NdotH, NdotV, NdotL, LdotH) * u_light_color;
+		}
+
+		light += (diffuse + specular) * shadow_factor;
+	}
+
+	else if(u_light_info.x == POINT_LIGHT || u_light_info.x == SPOT_LIGHT)
+	{
+		//BASIC PHONG
+		vec3 L = u_light_pos - world_pos;
+		float dist = length(L);
+		L /= dist;
+
+		vec3 diffuse = compute_lambertian(N,L) * diffuseColor;
+
+		vec3 specular;
+		//Specular light
+		if(roughness != 0.0)
+		{
+			vec3 H = normalize( L + V );
+			float NdotH = max(dot(N,H), 0.0);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
+			float LdotH = max(dot(L, H), 0.0);
+
+			//compute the specular
+			specular = compute_specular_BRDF(roughness, f0, NdotH, NdotV, NdotL, LdotH) * u_light_color;
+		}
+
+		light += diffuse + specular;
+
+		//LINEAR DISTANCE ATTENUATION
+		float attenuation = u_light_info.z - dist;
+		attenuation /= u_light_info.z;
+		attenuation = max(attenuation, 0.0);
+
+
+		if(u_light_info.x == SPOT_LIGHT)
+		{
+
+			float cos_angle = dot(u_light_front, L);
+			if(cos_angle < u_light_cone.y)
+				attenuation = 0.0;
+			else if(cos_angle < u_light_cone.x)
+				attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
+		}
+		
+		light *= attenuation * shadow_factor;
+	}
+
+	vec3 color = albedo.xyz * light;
+
+	FragColor = vec4(color, 1.0);
+}
+
+\tonemapper.fs
+#version 330 core
+
+in vec2 v_uv;
+
+uniform sampler2D u_texture;
+
+out vec4 FragColor;
+
+uniform float u_scale; //color scale before tonemapper
+uniform float u_average_lum; 
+uniform float u_lumwhite2;
+uniform float u_igamma; //inverse gamma
+
+
+void main() {
+	vec4 color = texture2D( u_texture, v_uv );
+	vec3 rgb = color.xyz;
+
+	float lum = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+	float L = (u_scale / u_average_lum) * lum;
+	float Ld = (L * (1.0 + L / u_lumwhite2)) / (1.0 + L);
+
+	rgb = (rgb / lum) * Ld;
+	rgb = max(rgb,vec3(0.001));
+	rgb = pow( rgb, vec3( u_igamma ) );
+	FragColor = vec4( rgb, 1.0 );
 }

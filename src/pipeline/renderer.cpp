@@ -284,15 +284,18 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		//render global illumination
 		renderDeferred();
 
-		illumination_fbo->unbind();
-
-		renderTonemapper();
 
 		if (!enable_dithering)
 		{
 			current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
 			renderTransparenciesForward();
 		}
+
+		illumination_fbo->unbind();
+
+		renderTonemapper();
+
+
 	}
 	
 }
@@ -1090,9 +1093,7 @@ void Renderer::showUI()
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
-
-				if (current_priority != eRenderPriority::NOPRIORITY)
-					ImGui::Checkbox("Dithering", &enable_dithering);
+				ImGui::Checkbox("Dithering", &enable_dithering);
 
 				ImGui::TreePop();
 			}

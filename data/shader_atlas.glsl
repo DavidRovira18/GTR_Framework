@@ -114,6 +114,9 @@ void main()
 {
 	vec2 uv = v_uv;
 	vec4 color = u_color;
+	vec4 albedo = texture( u_albedo_texture, v_uv );
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
+
 	color *= texture( u_albedo_texture, v_uv );
 
 	if(color.a < u_alpha_cutoff)
@@ -454,11 +457,15 @@ void main()
 	vec2 uv = v_uv;
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
 
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
-	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	vec3 emissive_light = texture(u_emissive_texture, v_uv).xyz;
+	emissive_light = pow(emissive_light, vec3(2.2));
+	emissive_light *= u_emissive_factor;
+
 	albedo.xyz += emissive_light;
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
@@ -525,6 +532,8 @@ void main()
 	vec2 uv = v_uv;
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
+
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float ks = texture(u_metallic_roughness_texture, v_uv).g;
@@ -618,7 +627,9 @@ void main()
 
 	vec3 color = albedo.xyz * light;
 
-	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	vec3 emissive_light = texture(u_emissive_texture, v_uv).xyz;
+	emissive_light = pow(emissive_light, vec3(2.2));
+	emissive_light *= u_emissive_factor;
 	color += emissive_light;
 
 	FragColor = vec4(color, albedo.a);
@@ -660,6 +671,8 @@ void main()
 	vec2 uv = v_uv;
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
+
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float metallic = texture(u_metallic_roughness_texture, v_uv).g;
@@ -773,7 +786,9 @@ void main()
 
 	vec3 color = albedo.xyz * light;
 
-	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	vec3 emissive_light = texture(u_emissive_texture, v_uv).xyz;
+	emissive_light = pow(emissive_light, vec3(2.2));
+	emissive_light *= u_emissive_factor;
 	color += emissive_light;
 
 	FragColor = vec4(color, albedo.a);
@@ -835,6 +850,7 @@ void main()
 	vec2 uv = v_uv;
 	vec4 albedo = u_color;
 	albedo *= texture( u_albedo_texture, v_uv );
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float ks = texture(u_metallic_roughness_texture, v_uv).g;
@@ -926,7 +942,10 @@ void main()
 
 	vec3 color = albedo.xyz * light;
 
-	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	vec3 emissive_light = texture(u_emissive_texture, v_uv).xyz;
+	emissive_light = pow(emissive_light, vec3(2.2));
+	emissive_light *= u_emissive_factor;
+
 	color += emissive_light;
 
 	FragColor = vec4(color, albedo.a);
@@ -967,6 +986,8 @@ void main()
 	vec3 N;
 	albedo *= texture( u_albedo_texture, v_uv );
 
+	albedo.xyz = pow(albedo.xyz, vec3(2.2));
+
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
@@ -984,6 +1005,7 @@ void main()
 		N = normalize(v_normal);
 	}
 	vec3 emissive_light = u_emissive_factor * texture(u_emissive_texture, v_uv).xyz;
+	emissive_light = pow(emissive_light, vec3(2.2));
 
 	float occlusion = texture(u_metallic_roughness_texture, v_uv).r;
 	float metallic = texture(u_metallic_roughness_texture, v_uv).g;

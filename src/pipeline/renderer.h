@@ -123,6 +123,7 @@ namespace SCN {
 
 		void cameraToShader(Camera* camera, GFX::Shader* shader); //sends camera uniforms to shader
 		void lightToShader(LightEntity* light, GFX::Shader* shader); //sends light uniforms to shader
+		void bufferToShader(GFX::Shader* shader);
 
 		void storeDrawCall(SCN::Node* node, Camera* camera);
 
@@ -133,6 +134,8 @@ namespace SCN {
 		void renderRenderCalls(RenderCall* rc);
 
 		void renderShadowmaps();
+
+		void renderTonemapper();
 	};
 
 };

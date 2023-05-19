@@ -248,12 +248,12 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	camera->enable();
 	gbuffers_fbo->bind();
 
-		//gbuffers_fbo->enableBuffers(true, false, false, false);
-		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//gbuffers_fbo->enableAllBuffers();
+	//gbuffers_fbo->enableBuffers(true, false, false, false);
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//gbuffers_fbo->enableAllBuffers();
 
-		prioritySwitch();
+	prioritySwitch();
 
 	gbuffers_fbo->unbind();
 
@@ -809,8 +809,10 @@ void SCN::Renderer::renderDeferred()
 	GFX::Shader* shader = GFX::Shader::Get("deferred_global");
 	shader->enable();
 
-	bufferToShader(shader);
-
+	shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
+	shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+	shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
+	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
 	shader->setUniform("u_ambient_light", scene->ambient_light);
 
 	quad->render(GL_TRIANGLES);
@@ -842,8 +844,10 @@ void SCN::Renderer::renderDeferred()
 				shader = GFX::Shader::Get(current.c_str());
 				shader->enable();
 
-				bufferToShader(shader);
-
+				shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
+				shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+				shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
+				shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
 				cameraToShader(camera, shader);
 				glDisable(GL_DEPTH_TEST);
 				glEnable(GL_BLEND);
@@ -860,8 +864,10 @@ void SCN::Renderer::renderDeferred()
 		shader = GFX::Shader::Get(current.c_str());
 		shader->enable();
 
-		bufferToShader(shader);
-		
+		shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
+		shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+		shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
+		shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
 		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
 		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 		cameraToShader(camera, shader);
@@ -922,14 +928,6 @@ void SCN::Renderer::lightToShader(LightEntity* light, GFX::Shader* shader)
 		shader->setTexture("u_shadowmap", light->shadowmap, 8);
 		shader->setUniform("u_shadow_viewproj", light->shadow_viewproj);
 	}
-}
-
-void SCN::Renderer::bufferToShader(GFX::Shader* shader) 
-{
-	shader->setTexture("u_albedo_texture", gbuffers_fbo->color_textures[0], 0);
-	shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
-	shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
-	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
 }
 
 void Renderer::renderTransparenciesForward()

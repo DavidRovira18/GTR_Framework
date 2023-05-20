@@ -67,6 +67,8 @@ namespace SCN {
 		bool render_boundaries;
 
 		//TONEMAPPER
+		bool enable_tonemapper;
+		int current_tonemapper;
 		float tonemapper_scale;
 		float tonemapper_avg_lum;
 		float tonemapper_lumwhite;
@@ -136,6 +138,7 @@ namespace SCN {
 		void renderShadowmaps();
 
 		void renderTonemapper();
+		void renderGamma();
 	};
 
 };

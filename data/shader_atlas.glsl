@@ -19,9 +19,12 @@ deferred_light quad.vs deferred_light.fs
 deferred_pbr_geometry basic.vs deferred_pbr_geometry.fs
 deferred_pbr quad.vs deferred_pbr.fs
 
+gamma quad.vs gamma.fs
 
 //TONEMAPPER
 tonemapper quad.vs tonemapper.fs
+uncharted_tonemapper quad.vs uncharted_tonemapper.fs
+
 \basic.vs
 
 #version 330 core
@@ -1578,6 +1581,24 @@ void main()
 	FragColor = vec4(color, 1.0);
 }
 
+\gamma.fs
+#version 330 core
+
+in vec2 v_uv;
+
+uniform sampler2D u_texture;
+uniform float u_igamma; //inverse gamma
+
+out vec4 FragColor;
+
+void main() {
+	vec4 color = texture2D( u_texture, v_uv );
+	vec3 rgb = color.xyz;
+	rgb = pow( rgb, vec3( u_igamma ) );
+	FragColor = vec4( rgb, 1.0 );
+}
+
+
 \tonemapper.fs
 #version 330 core
 
@@ -1585,13 +1606,12 @@ in vec2 v_uv;
 
 uniform sampler2D u_texture;
 
-out vec4 FragColor;
-
 uniform float u_scale; //color scale before tonemapper
 uniform float u_average_lum; 
 uniform float u_lumwhite2;
 uniform float u_igamma; //inverse gamma
 
+out vec4 FragColor;
 
 void main() {
 	vec4 color = texture2D( u_texture, v_uv );
@@ -1606,3 +1626,34 @@ void main() {
 	rgb = pow( rgb, vec3( u_igamma ) );
 	FragColor = vec4( rgb, 1.0 );
 }
+
+\uncharted_tonemapper.fs
+
+#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_texture;
+out vec4 FragColor;
+
+// Source http://filmicworlds.com/blog/filmic-tonemapping-operators/
+const float A = 0.15;
+const float B = 0.50;
+const float C = 0.10;
+const float D = 0.20;
+const float E = 0.02;
+const float F = 0.30;
+const float W = 11.2;
+
+vec3 gamma(const in vec3 color) {return pow(color, vec3(1.0/2.2)); }
+
+vec3 Uncharted2TonemapPartial(vec3 x) {
+   return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+void main() {
+    vec3 color = texture(u_texture, v_uv).rgb;
+    vec3 tonemapped_color = Uncharted2TonemapPartial(color * 2.0);
+    vec3 W = vec3(11.2f);
+    vec3 white_scale = vec3(1.0f) / Uncharted2TonemapPartial(W);
+    FragColor = vec4(gamma(tonemapped_color * white_scale), 1.0);
+}
+

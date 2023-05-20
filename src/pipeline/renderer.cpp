@@ -63,6 +63,8 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	skybox_cubemap = nullptr;
 
 	//TONEMAPPER
+	enable_tonemapper = false;
+	current_tonemapper = 0;
 	tonemapper_scale = 1.0;
 	tonemapper_avg_lum = 1.0;
 	tonemapper_lumwhite = 1.0;
@@ -235,8 +237,10 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 	illumination_fbo->unbind();
 	
-	renderTonemapper();
-
+	if (enable_tonemapper)
+		renderTonemapper();
+	else
+		renderGamma();
 }
 
 void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
@@ -293,9 +297,10 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 
 		illumination_fbo->unbind();
 
-		renderTonemapper();
-
-
+		if (enable_tonemapper)
+			renderTonemapper();
+		else
+			renderGamma();
 	}
 	
 }
@@ -1102,10 +1107,20 @@ void Renderer::showUI()
 	}
 	if (ImGui::TreeNode("Tonemapper Parameters"))
 	{
-		ImGui::SliderFloat("Scale", &tonemapper_scale, 0.0, 2.0);
-		ImGui::SliderFloat("Average Lum", &tonemapper_avg_lum, 0.0, 2.0);
-		ImGui::SliderFloat("Lum White", &tonemapper_lumwhite, 0.0, 2.0);
-		//ImGui::SliderFloat("Gamma", &gamma, 0.0, 2.0);
+		ImGui::Checkbox("Enable Tonemapper", &enable_tonemapper);
+		if (enable_tonemapper)
+		{
+			const char* tonemappers[] = { "Simple", "Uncharted" };
+			ImGui::Combo("Tonemappers", &current_tonemapper, tonemappers, IM_ARRAYSIZE(tonemappers), 2);
+
+			if (current_tonemapper == 0)
+			{
+				ImGui::SliderFloat("Scale", &tonemapper_scale, 0.0, 2.0);
+				ImGui::SliderFloat("Average Lum", &tonemapper_avg_lum, 0.0, 2.0);
+				ImGui::SliderFloat("Lum White", &tonemapper_lumwhite, 0.0, 2.0);
+				//ImGui::SliderFloat("Gamma", &gamma, 0.0, 2.0);
+			}
+		}
 		ImGui::TreePop();
 	}
 }
@@ -1375,12 +1390,30 @@ void Renderer::renderShadowmaps()
 
 void SCN::Renderer::renderTonemapper()
 {
+	GFX::Shader* shader;
 	//TONEMAPPER
-	GFX::Shader* shader = GFX::Shader::Get("tonemapper");
+	if (current_tonemapper == 0)
+	{
+		shader = GFX::Shader::Get("tonemapper");
+		shader->enable();
+		shader->setUniform("u_scale", tonemapper_scale);
+		shader->setUniform("u_average_lum", tonemapper_avg_lum);
+		shader->setUniform("u_lumwhite2", tonemapper_lumwhite);
+		shader->setUniform("u_igamma", 1.0f / gamma);
+	}
+	else {
+		shader = GFX::Shader::Get("uncharted_tonemapper");
+		shader->enable();
+	}
+
+	illumination_fbo->color_textures[0]->toViewport(shader);
+	shader->disable();
+}
+
+void SCN::Renderer::renderGamma()
+{
+	GFX::Shader* shader = GFX::Shader::Get("gamma");
 	shader->enable();
-	shader->setUniform("u_scale", tonemapper_scale);
-	shader->setUniform("u_average_lum", tonemapper_avg_lum);
-	shader->setUniform("u_lumwhite2", tonemapper_lumwhite);
 	shader->setUniform("u_igamma", 1.0f / gamma);
 	illumination_fbo->color_textures[0]->toViewport(shader);
 }

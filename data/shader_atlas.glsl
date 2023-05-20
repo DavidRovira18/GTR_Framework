@@ -19,6 +19,10 @@ deferred_light quad.vs deferred_light.fs
 deferred_pbr_geometry basic.vs deferred_pbr_geometry.fs
 deferred_pbr quad.vs deferred_pbr.fs
 
+//SSAO
+ssao quad.vs ssao.fs
+
+
 gamma quad.vs gamma.fs
 
 //TONEMAPPER
@@ -1580,6 +1584,71 @@ void main()
 
 	FragColor = vec4(color, 1.0);
 }
+
+\ssao.fs
+
+#version 330 core
+
+in vec2 v_uv;
+
+uniform sampler2D u_depth_texture;
+uniform sampler2D u_normal_texture;
+
+uniform mat4 u_viewprojection;
+uniform mat4 u_ivp;
+uniform vec2 u_iRes;
+
+#define NUM_POINTS 64
+
+uniform vec3 u_random_points[NUM_POINTS];
+uniform float u_radius; 
+
+layout(location = 0) out vec4 FragColor;
+
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+
+	float v = 1.0;
+	if(depth < 1.0)	//skip skybox pixels
+	{
+		vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+		vec4 world_proj = u_ivp * screen_coord;
+
+		vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	
+		//vec3 normal = texture(u_normal_texture, uv).rgb;
+		//vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+
+		int outside = 0;
+		for( int i = 0; i < NUM_POINTS; i++)
+		{
+			vec3 p = world_pos + u_random_points[i] * u_radius;
+		
+			vec4 proj = u_viewprojection * vec4(p,1.0);
+			proj.xy /= proj.w; 
+		
+			proj.z = (proj.z - 0.005) / proj.w;
+			proj.xyz = proj.xyz * 0.5 + vec3(0.5); //to [0..1]
+		
+			float pdepth = texture( u_depth_texture, proj.xy ).x;
+		
+			if( pdepth > proj.z ) 
+				outside++; 
+
+		}
+
+		v = float(outside) / float(NUM_POINTS);
+	}
+
+	FragColor = vec4(v, v, v, 1.0);
+	
+}
+
 
 \gamma.fs
 #version 330 core

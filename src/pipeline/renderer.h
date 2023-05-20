@@ -94,6 +94,7 @@ namespace SCN {
 		void renderFrameDeferred(SCN::Scene* scene, Camera* camera);
 
 		void generateShadowMaps();
+		std::vector<vec3> generateSpherePoints(int num, float radius, bool hemi);
 
 		//render the skybox
 		void renderSkybox(GFX::Texture* cubemap);

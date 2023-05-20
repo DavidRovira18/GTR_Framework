@@ -22,6 +22,8 @@ using namespace SCN;
 
 //some globals
 GFX::Mesh sphere;
+GFX::Mesh* quad;
+
 //RENDERING MODE
 eRenderMode current_mode = eRenderMode::FLAT;
 eLightsRender current_lights_render = eLightsRender::MULTIPASS;
@@ -38,6 +40,14 @@ std::vector<LightEntity*> visible_lights;
 //DEFERRED FBOs
 GFX::FBO* gbuffers_fbo = nullptr;
 GFX::FBO* illumination_fbo = nullptr;
+GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
+
+//SSAO
+std::vector<Vector3f> random_points;
+float ssao_radius = 1.0f;
+bool show_ssao = false;
+
+
 bool generate_gbuffers = false;
 bool show_buffers = false;
 bool show_globalpos = false;
@@ -76,6 +86,10 @@ Renderer::Renderer(const char* shader_atlas_filename)
 
 	sphere.createSphere(1.0f);
 	sphere.uploadToVRAM();
+
+	quad = GFX::Mesh::getQuad();
+
+	random_points = generateSpherePoints(128, 1.0, false);
 }
 
 void Renderer::setupScene(Camera* camera)
@@ -254,18 +268,21 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		gbuffers_fbo = new GFX::FBO();
 		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
 		CORE::BaseApplication::instance->window_resized = false;
+
+		ssao_fbo = new GFX::FBO();
+		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
+
 	}
 
 	camera->enable();
+
 	gbuffers_fbo->bind();
+		//gbuffers_fbo->enableBuffers(true, false, false, false);
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//gbuffers_fbo->enableAllBuffers();
 
-	//gbuffers_fbo->enableBuffers(true, false, false, false);
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//gbuffers_fbo->enableAllBuffers();
-
-	prioritySwitch();
-
+		prioritySwitch();
 	gbuffers_fbo->unbind();
 
 	generate_gbuffers = false;
@@ -274,26 +291,44 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		showGBuffers(size, camera);
 	else
 	{
+		//ssao
+		ssao_fbo->bind();
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+
+			GFX::Shader* shader = GFX::Shader::Get("ssao");
+			shader->enable();
+			shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+			shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 2);
+			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
+			shader->setUniform3Array("u_random_points", (float*) (&random_points[0]), 64);
+			shader->setUniform("u_radius", ssao_radius);
+			shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+			quad->render(GL_TRIANGLES);
+		ssao_fbo->unbind();
+
 		//Compute illumination
 		illumination_fbo->bind();
 
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+			glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (skybox_cubemap)
-			renderSkybox(skybox_cubemap);
+			if (skybox_cubemap)
+				renderSkybox(skybox_cubemap);
 
-		//render global illumination
-		renderDeferred();
+			//render global illumination
+			renderDeferred();
 
 
-		if (!enable_dithering)
-		{
-			current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
-			renderTransparenciesForward();
-		}
+			if (!enable_dithering)
+			{
+				current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
+				renderTransparenciesForward();
+			}
 
 		illumination_fbo->unbind();
 
@@ -301,6 +336,10 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			renderTonemapper();
 		else
 			renderGamma();
+	}
+
+	if (show_ssao) {
+		ssao_fbo->color_textures[0]->toViewport();
 	}
 	
 }
@@ -822,7 +861,7 @@ void SCN::Renderer::renderDeferred()
 {
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
-	GFX::Mesh* quad = GFX::Mesh::getQuad();
+	//GFX::Mesh* quad = GFX::Mesh::getQuad();
 
 	GFX::Shader* shader = GFX::Shader::Get("deferred_global");
 	shader->enable();
@@ -852,21 +891,23 @@ void SCN::Renderer::renderDeferred()
 	else
 	{
 		std::string current = Renderer::getShader(current_shader);
+		
+		shader = GFX::Shader::Get(current.c_str());
+		shader->enable();
+		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
 		for (auto light : lights)
 		{
 			if (light->light_type == eLightType::DIRECTIONAL)
 			{
-				shader = GFX::Shader::Get(current.c_str());
-				shader->enable();
-
 				bufferToShader(shader);
 				cameraToShader(camera, shader);
 				glDisable(GL_DEPTH_TEST);
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE, GL_ONE);
 				lightToShader(light, shader);
-				shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-				shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+				
 
 				quad->render(GL_TRIANGLES);
 			}
@@ -1099,7 +1140,10 @@ void Renderer::showUI()
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
 				ImGui::Checkbox("Dithering", &enable_dithering);
+				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
+				ImGui::SliderFloat("SSAO radius", &ssao_radius, 0.0, 50);
 
+				
 				ImGui::TreePop();
 			}
 		}
@@ -1323,6 +1367,32 @@ void Renderer::generateShadowMaps()
 
 	generate_shadowmap = false;
 	GFX::endGPULabel();
+}
+
+std::vector<vec3> SCN::Renderer::generateSpherePoints(int num, float radius, bool hemi)
+{
+	std::vector<vec3> points;
+	points.resize(num);
+	for (int i = 0; i < num; i += 1)
+	{
+		vec3& p = points[i];
+		float u = random();
+		float v = random();
+		float theta = u * 2.0 * PI;
+		float phi = acos(2.0 * v - 1.0);
+		float r = cbrt(random() * 0.9 + 0.1) * radius;
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float sinPhi = sin(phi);
+		float cosPhi = cos(phi);
+		p.x = r * sinPhi * cosTheta;
+		p.y = r * sinPhi * sinTheta;
+		p.z = r * cosPhi;
+		if (hemi && p.z < 0)
+			p.z *= -1.0;
+	}
+	return points;
+
 }
 
 void Renderer::renderRenderCalls(RenderCall* rc)

@@ -1033,8 +1033,12 @@ uniform sampler2D u_albedo_texture;
 uniform sampler2D u_normal_texture;
 uniform sampler2D u_extra_texture;
 uniform sampler2D u_depth_texture;
+uniform sampler2D u_ao_texture;
 
+uniform bool u_add_SSAO;
+uniform float u_control_SSAO;
 uniform vec3 u_ambient_light;
+uniform vec2 u_iRes;
 
 out vec4 FragColor;
 
@@ -1052,7 +1056,22 @@ void main()
 	vec3 emissive_light = texture(u_extra_texture, uv).rgb;
 	float occlusion = texture(u_albedo_texture, uv).a;
 
-	albedo *= u_ambient_light * occlusion;
+	vec3 light = u_ambient_light;
+
+	if (u_add_SSAO)
+	{
+		vec2 screenuv = gl_FragCoord.xy * u_iRes;
+
+		float ao_factor = texture( u_ao_texture, screenuv ).x;
+
+		//we could play with the curve to have more control 
+		ao_factor = pow( ao_factor, u_control_SSAO );
+
+		light *= ao_factor;
+
+	}
+
+	albedo *= light * occlusion;
 	color.xyz += emissive_light + albedo;
 	FragColor = vec4(color, 1.0);
 
@@ -1604,6 +1623,8 @@ uniform vec3 u_random_points[NUM_POINTS];
 uniform float u_radius; 
 uniform vec3 u_front; 
 
+#include "normalmaps"
+
 
 layout(location = 0) out vec4 FragColor;
 
@@ -1631,46 +1652,54 @@ void main()
 		
 	float depth = texture(u_depth_texture, uv).r;
 
-	float v = 1.0;
-	if(depth < 1.0)	//skip skybox pixels
+	if(depth >= 1.0)  //skip skybox pixels
 	{
-		vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-		vec4 world_proj = u_ivp * screen_coord;
-
-		vec3 world_pos = world_proj.xyz / world_proj.w;
+		FragColor = vec4(1.0);
+		return;
+	}
 
 	
-		//vec3 normal = texture(u_normal_texture, uv).rgb;
-		//vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
 
-		int outside = 0;
-		for( int i = 0; i < NUM_POINTS; i++)
-		{
-			vec3 offset = u_random_points[i] * u_radius;	
-			mat4 rot =  rotationMatrix( u_front, rand(gl_FragCoord.xy) );
-			offset = (rot * vec4(offset, 1.0)).xyz;
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	
+	vec3 normal = texture(u_normal_texture, uv).rgb;
+	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
+
+	int outside = 0;
+	for( int i = 0; i < NUM_POINTS; i++)
+	{
+		vec3 offset = u_random_points[i] * u_radius;	
+		mat4 rot =  rotationMatrix( u_front, rand(gl_FragCoord.xy) );
+		offset = (rot * vec4(offset, 1.0)).xyz;
 			
-			vec3 p = world_pos + offset;
+		vec3 p = world_pos + offset;
 
-			vec4 proj = u_viewprojection * vec4(p,1.0);
-			proj.xy /= proj.w; 
+		// rotate the point in the hemisphere
+		//mat3 rotmat = cotangent_frame( N, world_pos, uv );
+		//p =  rotmat * p;
+
+		vec4 proj = u_viewprojection * vec4(p,1.0);
+		proj.xy /= proj.w; 
 		
-			proj.z = (proj.z - 0.005) / proj.w;
-			proj.xyz = proj.xyz * 0.5 + vec3(0.5); //to [0..1]
+		proj.z = (proj.z - 0.005) / proj.w;
+		proj.xyz = proj.xyz * 0.5 + vec3(0.5); //to [0..1]
 		
-			float pdepth = texture( u_depth_texture, proj.xy ).x;
+		float pdepth = texture( u_depth_texture, proj.xy ).x;
 		
-			float diff = pdepth - proj.z;
-			//diff = pow(diff, 2.2);  // TODO: linierize values, this is not working 
+		float diff = pdepth - proj.z;
+		//diff = pow(diff, 2.2);  // TODO: linierize values, this is not working 
 
-			//if(diff > 0.00005)
-			if(pdepth > proj.z)
-				outside++; 
+		//if(diff > 0.00005)
+		if(pdepth > proj.z)
+			outside++; 
 
-		}
-
-		v = float(outside) / float(NUM_POINTS);
 	}
+
+	float v = float(outside) / float(NUM_POINTS);
+	
 
 	FragColor = vec4(v, v, v, 1.0);
 	

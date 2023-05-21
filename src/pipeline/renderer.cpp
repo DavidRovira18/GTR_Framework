@@ -46,7 +46,8 @@ GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
 std::vector<Vector3f> random_points;
 float ssao_radius = 5.0f;
 bool show_ssao = false;
-
+bool add_SSAO = true;
+float control_SSAO_factor = 3.0f;
 
 bool generate_gbuffers = false;
 bool show_buffers = false;
@@ -296,6 +297,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_BLEND);
 
+
 			GFX::Shader* shader = GFX::Shader::Get("ssao");
 			shader->enable();
 			shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
@@ -325,7 +327,6 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 
 				//render global illumination
 				renderDeferred();
-
 
 				if (!enable_dithering)
 				{
@@ -863,6 +864,8 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 
 void SCN::Renderer::renderDeferred()
 {
+	vec2 size = CORE::getWindowSize();
+
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 	//GFX::Mesh* quad = GFX::Mesh::getQuad();
@@ -872,12 +875,15 @@ void SCN::Renderer::renderDeferred()
 
 	bufferToShader(shader);
 	shader->setUniform("u_ambient_light", scene->ambient_light ^ 2.2f);
+	shader->setTexture("u_ao_texture", ssao_fbo->color_textures[0], 4);
+	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+	shader->setUniform("u_add_SSAO", add_SSAO);
+	shader->setUniform("u_control_SSAO", control_SSAO_factor);
 
 	quad->render(GL_TRIANGLES);
 
 	shader->disable();
 
-	vec2 size = CORE::getWindowSize();
 	Camera* camera = Camera::current;
 
 	if (show_globalpos)
@@ -1143,9 +1149,12 @@ void Renderer::showUI()
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
-				ImGui::Checkbox("Dithering", &enable_dithering);
-				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
+				ImGui::Checkbox("Dithering", &enable_dithering); 
+				ImGui::Checkbox("Add SSA", &add_SSAO);
 				ImGui::SliderFloat("SSAO radius", &ssao_radius, 0.0, 50);
+				ImGui::SliderFloat("SSAO control factor", &control_SSAO_factor, 0.0, 50);
+
+				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
 
 				
 				ImGui::TreePop();

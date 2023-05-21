@@ -44,7 +44,7 @@ GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
 
 //SSAO
 std::vector<Vector3f> random_points;
-float ssao_radius = 1.0f;
+float ssao_radius = 5.0f;
 bool show_ssao = false;
 
 
@@ -270,7 +270,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		CORE::BaseApplication::instance->window_resized = false;
 
 		ssao_fbo = new GFX::FBO();
-		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
+		ssao_fbo->create(size.x / 2, size.y / 2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
 
 	}
 
@@ -301,41 +301,45 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
 			shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 2);
 			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+			shader->setUniform("u_iRes", vec2(1.0 / ssao_fbo->color_textures[0]->width, 1.0 / ssao_fbo->color_textures[0]->height));
 
 			shader->setUniform3Array("u_random_points", (float*) (&random_points[0]), 64);
 			shader->setUniform("u_radius", ssao_radius);
 			shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+			shader->setUniform("u_front", camera->front);
+
 			quad->render(GL_TRIANGLES);
 		ssao_fbo->unbind();
 
-		//Compute illumination
-		illumination_fbo->bind();
+		if (!show_ssao) {
+			//Compute illumination
+			illumination_fbo->bind();
 
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_BLEND);
-			glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glDisable(GL_DEPTH_TEST);
+				glDisable(GL_BLEND);
+				glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			if (skybox_cubemap)
-				renderSkybox(skybox_cubemap);
+				if (skybox_cubemap)
+					renderSkybox(skybox_cubemap);
 
-			//render global illumination
-			renderDeferred();
+				//render global illumination
+				renderDeferred();
 
 
-			if (!enable_dithering)
-			{
-				current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
-				renderTransparenciesForward();
-			}
+				if (!enable_dithering)
+				{
+					current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
+					renderTransparenciesForward();
+				}
 
-		illumination_fbo->unbind();
+			illumination_fbo->unbind();
 
-		if (enable_tonemapper)
-			renderTonemapper();
-		else
-			renderGamma();
+			if (enable_tonemapper)
+				renderTonemapper();
+			else
+				renderGamma();
+		}
 	}
 
 	if (show_ssao) {

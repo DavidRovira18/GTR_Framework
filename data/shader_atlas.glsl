@@ -1602,8 +1602,27 @@ uniform vec2 u_iRes;
 
 uniform vec3 u_random_points[NUM_POINTS];
 uniform float u_radius; 
+uniform vec3 u_front; 
+
 
 layout(location = 0) out vec4 FragColor;
+
+//random value from uv
+float rand(vec2 co)
+{
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+//create rotation matrix from arbitrary axis and angle
+mat4 rotationMatrix( vec3 axis, float angle )
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c, oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0, oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c, oc * axis.y * axis.z - axis.x * s,  0.0,oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0, 0.0, 0.0, 0.0, 1.0);
+}
 
 
 void main()
@@ -1627,8 +1646,12 @@ void main()
 		int outside = 0;
 		for( int i = 0; i < NUM_POINTS; i++)
 		{
-			vec3 p = world_pos + u_random_points[i] * u_radius;
-		
+			vec3 offset = u_random_points[i] * u_radius;	
+			mat4 rot =  rotationMatrix( u_front, rand(gl_FragCoord.xy) );
+			offset = (rot * vec4(offset, 1.0)).xyz;
+			
+			vec3 p = world_pos + offset;
+
 			vec4 proj = u_viewprojection * vec4(p,1.0);
 			proj.xy /= proj.w; 
 		
@@ -1637,7 +1660,11 @@ void main()
 		
 			float pdepth = texture( u_depth_texture, proj.xy ).x;
 		
-			if( pdepth > proj.z ) 
+			float diff = pdepth - proj.z;
+			//diff = pow(diff, 2.2);  // TODO: linierize values, this is not working 
+
+			//if(diff > 0.00005)
+			if(pdepth > proj.z)
 				outside++; 
 
 		}

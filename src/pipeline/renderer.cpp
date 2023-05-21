@@ -40,9 +40,11 @@ std::vector<LightEntity*> visible_lights;
 //DEFERRED FBOs
 GFX::FBO* gbuffers_fbo = nullptr;
 GFX::FBO* illumination_fbo = nullptr;
-GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
 
 //SSAO
+GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
+GFX::Texture* ssao_blur = nullptr;	 
+
 std::vector<Vector3f> random_points;
 float ssao_radius = 5.0f;
 bool show_ssao = false;
@@ -271,7 +273,11 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		CORE::BaseApplication::instance->window_resized = false;
 
 		ssao_fbo = new GFX::FBO();
-		ssao_fbo->create(size.x / 2, size.y / 2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
+		ssao_fbo->create(size.x , size.y , 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
+
+		ssao_blur = new GFX::Texture();
+		ssao_blur->create(size.x, size.y);
+
 
 	}
 

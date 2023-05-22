@@ -1376,7 +1376,7 @@ void main()
 
 	float occlusion = texture(u_albedo_texture, uv).a;
 	float metallic = texture(u_normal_texture, uv).a;
-	float roughness = texture(u_extra_texture, uv).b;
+	float roughness = texture(u_extra_texture, uv).a;
 
 	vec3 normal = texture(u_normal_texture, uv).rgb;
 	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
@@ -1516,7 +1516,7 @@ void main()
 
 	float occlusion = texture(u_albedo_texture, uv).a;
 	float metallic = texture(u_normal_texture, uv).a;
-	float roughness = texture(u_extra_texture, uv).b;
+	float roughness = texture(u_extra_texture, uv).a;
 
 	vec3 normal = texture(u_normal_texture, uv).rgb;
 	vec3 N = normalize(normal * 2.0 - vec3(1.0)); 
@@ -1553,6 +1553,7 @@ void main()
 
 			//compute the specular
 			specular = compute_specular_BRDF(roughness, f0, NdotH, NdotV, NdotL, LdotH) * u_light_color;
+
 		}
 
 		light += (diffuse + specular) * shadow_factor;

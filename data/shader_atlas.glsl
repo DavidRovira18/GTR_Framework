@@ -1001,6 +1001,9 @@ void main()
 	if(u_enable_dithering == 1.0 && dither4x4(gl_FragCoord.xy, albedo.a) == 0.0)
 		discard;
 
+	else if (u_enable_dithering == 0.0 && albedo.a < 0.9)
+		discard;
+
 	if(u_enable_normalmaps == 1)
 	{
 		vec3 normal_pixel = texture2D(u_normal_texture, v_uv).xyz;
@@ -1675,11 +1678,12 @@ void main()
 		mat4 rot =  rotationMatrix( u_front, rand(gl_FragCoord.xy) );
 		offset = (rot * vec4(offset, 1.0)).xyz;
 			
-		vec3 p = world_pos + offset;
+		vec3 p = offset;
 
 		// rotate the point in the hemisphere
-		//mat3 rotmat = cotangent_frame( N, world_pos, uv );
-		//p =  rotmat * p;
+		mat3 rotmat = cotangent_frame( N, world_pos, uv );
+		p =  rotmat * p;
+		p += world_pos;
 
 		vec4 proj = u_viewprojection * vec4(p,1.0);
 		proj.xy /= proj.w; 
@@ -1702,6 +1706,8 @@ void main()
 	
 
 	FragColor = vec4(v, v, v, 1.0);
+	//FragColor = vec4(N.x, N.y, N.z, 1.0);
+
 	
 }
 

@@ -66,6 +66,50 @@ namespace SCN {
 		bool render_wireframe;
 		bool render_boundaries;
 
+
+		//RENDERING MODE
+		eRenderMode current_mode = eRenderMode::FLAT;
+		eLightsRender current_lights_render = eLightsRender::MULTIPASS;
+		//RENDER CALLS AND PRIORITY
+		std::vector<RenderCall> render_calls;
+		std::vector<RenderCall> render_calls_opaque;
+		eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
+		//SHADER
+		eShaders current_shader = eShaders::sTEXTURE;
+		//LIGHTS
+		std::vector<LightEntity*> lights;
+		std::vector<LightEntity*> visible_lights;
+
+		//DEFERRED FBOs
+		GFX::FBO* gbuffers_fbo = nullptr;
+		GFX::FBO* illumination_fbo = nullptr;
+
+		//SSAO
+		GFX::FBO* ssao_fbo = nullptr;
+		GFX::Texture* ssao_blur = nullptr;
+
+		std::vector<Vector3f> random_points;
+		float ssao_radius = 5.0f;
+		bool show_ssao = false;
+		bool add_SSAO = true;
+		float control_SSAO_factor = 3.0f;
+
+		bool generate_gbuffers = false;
+		bool show_buffers = false;
+		bool show_globalpos = false;
+		bool enable_dithering = true;
+
+		bool generate_shadowmap = false;
+		bool show_shadowmaps = false;
+
+		bool enable_specular = false;
+		bool enable_normalmap = false;
+
+		bool enable_reflections = false;
+		float reflections_factor = 0.0f;
+		bool enable_fresnel = false;
+
+
 		//TONEMAPPER
 		bool enable_tonemapper;
 		int current_tonemapper;
@@ -73,6 +117,8 @@ namespace SCN {
 		float tonemapper_avg_lum;
 		float tonemapper_lumwhite;
 		float gamma;
+
+
 
 		GFX::Texture* skybox_cubemap;
 
@@ -83,6 +129,8 @@ namespace SCN {
 
 		//just to be sure we have everything ready for the rendering
 		void setupScene(Camera* camera);
+		void processLights();
+		void processRenderCalls(Camera* camera);
 
 		//add here your functions
 		const char* getShader(eShaders current);
@@ -107,15 +155,24 @@ namespace SCN {
 
 		void renderMeshWithMaterialFlat(RenderCall* rc);
 
-
 		void renderMeshWithMaterialLight(RenderCall* rc);
 
 		void renderMultipass(GFX::Shader* shader, RenderCall* rc);
 
 		void renderSinglepass(GFX::Shader* shader, RenderCall* rc);
 
+		void setVisibleLights(RenderCall* rc);
+
 		void renderDeferredGBuffers(RenderCall* rc);
 		void renderDeferred();
+		void renderDeferredGlobal(GFX::Shader* shader);
+		void renderDeferredGlobalPos(GFX::Shader* shader, Camera* camera);
+		void renderDeferredLights(GFX::Shader* shader, Camera* camera);
+		void renderDeferredDirectionalLights(GFX::Shader* shader, Camera* camera);
+		void renderDeferredGeometryLights(GFX::Shader* shader, Camera* camera);
+		void initDeferredFBOs();
+		void generateSSAO(Camera* camera);
+		void computeIlluminationDeferred();
 
 		void renderTransparenciesForward();
 		void renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc);
@@ -127,6 +184,7 @@ namespace SCN {
 		void cameraToShader(Camera* camera, GFX::Shader* shader); //sends camera uniforms to shader
 		void lightToShader(LightEntity* light, GFX::Shader* shader); //sends light uniforms to shader
 		void bufferToShader(GFX::Shader* shader);
+		void materialToShader(GFX::Shader* shader, SCN::Material* material);
 
 		void storeDrawCall(SCN::Node* node, Camera* camera);
 

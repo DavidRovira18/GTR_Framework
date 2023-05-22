@@ -23,50 +23,8 @@ using namespace SCN;
 //some globals
 GFX::Mesh sphere;
 GFX::Mesh* quad;
-
-//RENDERING MODE
-eRenderMode current_mode = eRenderMode::FLAT;
-eLightsRender current_lights_render = eLightsRender::MULTIPASS;
-//RENDER CALLS AND PRIORITY
-std::vector<RenderCall> render_calls;
-std::vector<RenderCall> render_calls_opaque;
-eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
-//SHADER
-eShaders current_shader = eShaders::sTEXTURE;
-//LIGHTS
-std::vector<LightEntity*> lights;
-std::vector<LightEntity*> visible_lights;
-
-//DEFERRED FBOs
-GFX::FBO* gbuffers_fbo = nullptr;
-GFX::FBO* illumination_fbo = nullptr;
-
-//SSAO
-GFX::FBO* ssao_fbo = nullptr;	 // TODO: put it in the .h
-GFX::Texture* ssao_blur = nullptr;	 
-
-std::vector<Vector3f> random_points;
-float ssao_radius = 5.0f;
-bool show_ssao = false;
-bool add_SSAO = true;
-float control_SSAO_factor = 3.0f;
-
-bool generate_gbuffers = false;
-bool show_buffers = false;
-bool show_globalpos = false;
-bool enable_dithering = true;
-
 constexpr auto MAX_LIGHTS = 12;
 
-bool generate_shadowmap = false;
-bool show_shadowmaps = false;
-
-bool enable_specular = false;
-bool enable_normalmap = false;
-
-bool enable_reflections = false;
-float reflections_factor = 0.0f;
-bool enable_fresnel = false;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -102,8 +60,26 @@ void Renderer::setupScene(Camera* camera)
 	else
 		skybox_cubemap = nullptr;
 	
-	//PROCESS ENTITIES 
+	processLights();
+
+	processRenderCalls(camera);
 	
+	if(current_mode != eRenderMode::FLAT)
+		generateShadowMaps();
+
+	vec2 size = CORE::getWindowSize();
+
+	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
+	{
+		illumination_fbo = new GFX::FBO();
+		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT, false);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
+}
+
+void SCN::Renderer::processLights()
+{
 	//lights
 	lights.clear();
 	visible_lights.clear();
@@ -121,76 +97,76 @@ void Renderer::setupScene(Camera* camera)
 			lights.push_back(lent);
 		}
 	}
+}
 
-	//render calls
+void SCN::Renderer::processRenderCalls(Camera* camera)
+{
 	//first of all, clear the render calls vectors
 	render_calls.clear();
 	render_calls_opaque.clear();
 
 	switch (current_priority)
 	{
-	case(eRenderPriority::NOPRIORITY):
-	{
-		for (int i = 0; i < scene->entities.size(); ++i)
+		case(eRenderPriority::NOPRIORITY):
 		{
-			BaseEntity* ent = scene->entities[i];
-			if (!ent->visible)
-				continue;
-
-			//is a prefab!
-			if (ent->getType() == eEntityType::PREFAB)
+			for (int i = 0; i < scene->entities.size(); ++i)
 			{
-				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-				if (pent->prefab)
-					storeDrawCallNoPriority(&pent->root, camera);
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
+
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						storeDrawCallNoPriority(&pent->root, camera);
+				}
 			}
-		}
-		break;
-	};
-	case(eRenderPriority::ALPHA1):
-	{
-		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-		for (int i = 0; i < scene->entities.size(); ++i)
+			break;
+		};
+		case(eRenderPriority::ALPHA1):
 		{
-			BaseEntity* ent = scene->entities[i];
-			if (!ent->visible)
-				continue;
-
-			//is a prefab!
-			if (ent->getType() == eEntityType::PREFAB)
+			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+			for (int i = 0; i < scene->entities.size(); ++i)
 			{
-				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-				if (pent->prefab)
-					storeDrawCall(&pent->root, camera);
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
+
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						storeDrawCall(&pent->root, camera);
+				}
 			}
+			break;
 		}
-		break;
-	}
-	case(eRenderPriority::DISTANCE2CAMERA):
-	{
-		//STORE DRAW CALLS IN VECTOR RENDER_CALLS
-		for (int i = 0; i < scene->entities.size(); ++i)
+		case(eRenderPriority::DISTANCE2CAMERA):
 		{
-			BaseEntity* ent = scene->entities[i];
-			if (!ent->visible)
-				continue;
-
-			//is a prefab!
-			if (ent->getType() == eEntityType::PREFAB)
+			//STORE DRAW CALLS IN VECTOR RENDER_CALLS
+			for (int i = 0; i < scene->entities.size(); ++i)
 			{
-				PrefabEntity* pent = (SCN::PrefabEntity*)ent;
-				if (pent->prefab)
-					storeDrawCall(&pent->root, camera);
+				BaseEntity* ent = scene->entities[i];
+				if (!ent->visible)
+					continue;
+
+				//is a prefab!
+				if (ent->getType() == eEntityType::PREFAB)
+				{
+					PrefabEntity* pent = (SCN::PrefabEntity*)ent;
+					if (pent->prefab)
+						storeDrawCall(&pent->root, camera);
+				}
 			}
+			//ORDER RENDER CALLS BY DISTANCE TO CAMERA
+			std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
+			break;
 		}
-		//ORDER RENDER CALLS BY DISTANCE TO CAMERA
-		std::sort(render_calls.begin(), render_calls.end(), [](const RenderCall a, const RenderCall b) {return(a.distance_2_camera > b.distance_2_camera); });
-		break;
-	}
 	}
 
-	if(current_mode != eRenderMode::FLAT)
-		generateShadowMaps();
 }
 
 const char* Renderer::getShader(eShaders current)
@@ -213,14 +189,6 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 	this->scene = scene;
 	setupScene(camera);
 
-	vec2 size = CORE::getWindowSize();
-
-	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
-	{
-		illumination_fbo = new GFX::FBO();
-		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT, false);
-		CORE::BaseApplication::instance->window_resized = false;
-	}
 
 	if (current_mode == eRenderMode::DEFERRED)
 		renderFrameDeferred(scene, camera);
@@ -265,21 +233,8 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	vec2 size = CORE::getWindowSize();
 
 	generate_gbuffers = true;
-	//Generate GBuffers
-	if (!gbuffers_fbo || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
-	{
-		gbuffers_fbo = new GFX::FBO();
-		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
-		CORE::BaseApplication::instance->window_resized = false;
-
-		ssao_fbo = new GFX::FBO();
-		ssao_fbo->create(size.x , size.y , 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
-
-		ssao_blur = new GFX::Texture();
-		ssao_blur->create(size.x, size.y);
-
-
-	}
+	
+	initDeferredFBOs();
 
 	camera->enable();
 
@@ -288,7 +243,6 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//gbuffers_fbo->enableAllBuffers();
-
 		prioritySwitch();
 	gbuffers_fbo->unbind();
 
@@ -300,46 +254,13 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	{
 		//ssao
 		ssao_fbo->bind();
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_BLEND);
-
-
-			GFX::Shader* shader = GFX::Shader::Get("ssao");
-			shader->enable();
-			shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
-			shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 2);
-			shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-			shader->setUniform("u_iRes", vec2(1.0 / ssao_fbo->color_textures[0]->width, 1.0 / ssao_fbo->color_textures[0]->height));
-
-			shader->setUniform3Array("u_random_points", (float*) (&random_points[0]), 64);
-			shader->setUniform("u_radius", ssao_radius);
-			shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
-			shader->setUniform("u_front", camera->front);
-
-			quad->render(GL_TRIANGLES);
+			generateSSAO(camera);
 		ssao_fbo->unbind();
 
 		if (!show_ssao) {
 			//Compute illumination
 			illumination_fbo->bind();
-
-				glDisable(GL_DEPTH_TEST);
-				glDisable(GL_BLEND);
-				glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-				if (skybox_cubemap)
-					renderSkybox(skybox_cubemap);
-
-				//render global illumination
-				renderDeferred();
-
-				if (!enable_dithering)
-				{
-					current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
-					renderTransparenciesForward();
-				}
-
+				computeIlluminationDeferred();
 			illumination_fbo->unbind();
 
 			if (enable_tonemapper)
@@ -445,20 +366,14 @@ void Renderer::renderMeshWithMaterial(RenderCall* rc)
 
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
-	GFX::Texture* white = NULL;
-	GFX::Texture* albedo_texture = NULL;
-	GFX::Texture* emissive_texture = NULL;
-	GFX::Texture* metallic_roughness_texture = NULL;
+	
 	Camera* camera = Camera::current;
 	
-	white = GFX::Texture::getWhiteTexture();
-	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
-	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
-	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture;
-	//texture = material->emissive_texture;
-	//texture = material->metallic_roughness_texture;
-	//texture = material->normal_texture;
-	//texture = material->occlusion_texture;
+	GFX::Texture* white = GFX::Texture::getWhiteTexture();
+	GFX::Texture* albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
+	GFX::Texture* emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+	GFX::Texture* metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture;
+	
 	if (albedo_texture == NULL)
 		albedo_texture = white; //a 1x1 white texture
 
@@ -596,25 +511,10 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
 	GFX::Texture* black = NULL;
-	GFX::Texture* white = NULL;
-	GFX::Texture* albedo_texture = NULL;
-	GFX::Texture* emissive_texture = NULL;
-	GFX::Texture* metallic_roughness_texture = NULL;
-	GFX::Texture* normal_texture = NULL;
+	
 	Camera* camera = Camera::current;
-
-	black = GFX::Texture::getBlackTexture();
-	white = GFX::Texture::getWhiteTexture();
-	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
-	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
-	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture; //r channel occlusion, g metallic, b roughness
-	normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
-
-	//texture = material->emissive_texture;
-	//texture = material->normal_texture;
-	//texture = material->occlusion_texture;
-	if (albedo_texture == NULL)
-		albedo_texture = white; //a 1x1 white texture
+	
+	GFX::Texture* normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
 
 	//select the blending
 	if (rc->material->alpha_mode == SCN::eAlphaMode::BLEND)
@@ -648,14 +548,11 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	//upload uniforms
 	shader->setUniform("u_model", rc->model);
 	cameraToShader(camera, shader);
+	materialToShader(shader, rc->material);
+
 	float t = getTime();
 	shader->setUniform("u_time", t);
 
-	shader->setUniform("u_color", rc->material->color);	
-	shader->setTexture("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
-	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
-	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
-	
 	if (normal_texture && enable_normalmap)
 	{
 		shader->setTexture("u_normal_texture", normal_texture, 3);
@@ -674,16 +571,7 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 	if (render_wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	visible_lights.clear();
-
-	for (int i = 0; i < lights.size(); ++i)
-	{
-		LightEntity* light = lights[i];
-		if (light->light_type != eLightType::DIRECTIONAL && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
-			continue;
-
-		visible_lights.push_back(light);
-	}
+	setVisibleLights(rc);
 
 	if (visible_lights.size() == 0)
 	{
@@ -698,10 +586,11 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 
 	switch (current_lights_render)
 	{
-	case(eLightsRender::MULTIPASS): renderMultipass(shader, rc); break;
-	case(eLightsRender::MULTIPASS_TRANSPARENCIES):renderMultipassTransparencies(shader, rc); break;
-	case(eLightsRender::SINGLEPASS): renderSinglepass(shader,rc); break;
+		case(eLightsRender::MULTIPASS): renderMultipass(shader, rc); break;
+		case(eLightsRender::MULTIPASS_TRANSPARENCIES):renderMultipassTransparencies(shader, rc); break;
+		case(eLightsRender::SINGLEPASS): renderSinglepass(shader,rc); break;
 	}
+
 	//disable shader
 	shader->disable();
 
@@ -793,6 +682,20 @@ void SCN::Renderer::renderSinglepass(GFX::Shader* shader, RenderCall* rc)
 	shader->setUniform("u_emissive_factor", vec3(0.0));
 }
 
+void SCN::Renderer::setVisibleLights(RenderCall* rc)
+{
+	visible_lights.clear();
+
+	for (int i = 0; i < lights.size(); ++i)
+	{
+		LightEntity* light = lights[i];
+		if (light->light_type != eLightType::DIRECTIONAL && !BoundingBoxSphereOverlap(rc->bounding, light->root.model.getTranslation(), light->max_distance))
+			continue;
+
+		visible_lights.push_back(light);
+	}
+}
+
 void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 {
 	//in case there is nothing to do
@@ -802,22 +705,10 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 
 	//define locals to simplify coding
 	GFX::Shader* shader = NULL;
-	GFX::Texture* white = NULL;
-	GFX::Texture* albedo_texture = NULL;
-	GFX::Texture* emissive_texture = NULL;
-	GFX::Texture* metallic_roughness_texture = NULL;
-	GFX::Texture* normal_texture = NULL;
+
 	Camera* camera = Camera::current;
-
-	white = GFX::Texture::getWhiteTexture();
-	albedo_texture = rc->material->textures[SCN::eTextureChannel::ALBEDO].texture;
-	emissive_texture = rc->material->textures[SCN::eTextureChannel::EMISSIVE].texture;
-	metallic_roughness_texture = rc->material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture;
-	normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
-
-
-	if (albedo_texture == NULL)
-		albedo_texture = white; //a 1x1 white texture
+	
+	GFX::Texture* normal_texture = rc->material->textures[SCN::eTextureChannel::NORMALMAP].texture;
 
 	glDisable(GL_BLEND);
 
@@ -843,12 +734,9 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 	//upload uniforms
 	shader->setUniform("u_model", rc->model);
 	cameraToShader(camera, shader);
+	materialToShader(shader, rc->material);
 	float t = getTime();
 	shader->setUniform("u_time", t);
-	shader->setUniform("u_color", rc->material->color);
-	shader->setUniform("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
-	shader->setUniform("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
-	shader->setUniform("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 	shader->setUniform("u_emissive_factor", rc->material->emissive_factor);
 	if (normal_texture && enable_normalmap)
 	{
@@ -870,13 +758,28 @@ void SCN::Renderer::renderDeferredGBuffers(RenderCall* rc)
 
 void SCN::Renderer::renderDeferred()
 {
+	GFX::Shader* shader = nullptr;
+	renderDeferredGlobal(shader);
+
+	Camera* camera = Camera::current;
+	vec2 size = CORE::getWindowSize();
+
+	if (show_globalpos)
+		renderDeferredGlobalPos(shader, camera);
+
+	else
+		renderDeferredLights(shader, camera);
+}
+
+void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
+{
 	vec2 size = CORE::getWindowSize();
 
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 	//GFX::Mesh* quad = GFX::Mesh::getQuad();
 
-	GFX::Shader* shader = GFX::Shader::Get("deferred_global");
+	shader = GFX::Shader::Get("deferred_global");
 	shader->enable();
 
 	bufferToShader(shader);
@@ -889,81 +792,161 @@ void SCN::Renderer::renderDeferred()
 	quad->render(GL_TRIANGLES);
 
 	shader->disable();
+}
 
-	Camera* camera = Camera::current;
+void SCN::Renderer::renderDeferredGlobalPos(GFX::Shader* shader, Camera* camera)
+{
+	vec2 size = CORE::getWindowSize();
 
-	if (show_globalpos)
+	shader = GFX::Shader::Get("deferred_globalpos");
+	shader->enable();
+	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
+	quad->render(GL_TRIANGLES);
+	shader->disable();
+}
+
+void SCN::Renderer::renderDeferredLights(GFX::Shader* shader, Camera* camera)
+{
+
+	std::string current = Renderer::getShader(current_shader);
+
+	shader = GFX::Shader::Get(current.c_str());
+	
+	renderDeferredDirectionalLights(shader, camera);
+
+	current += "_geometry";
+	shader = GFX::Shader::Get(current.c_str());
+	
+	renderDeferredGeometryLights(shader, camera);
+}
+
+void SCN::Renderer::renderDeferredDirectionalLights(GFX::Shader* shader, Camera* camera)
+{
+	vec2 size = CORE::getWindowSize();
+
+	shader->enable();
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+
+	for (auto light : lights)
 	{
-		shader = GFX::Shader::Get("deferred_globalpos");
-		shader->enable();
-		shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
-		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+		if (light->light_type == eLightType::DIRECTIONAL)
+		{
+			bufferToShader(shader);
+			cameraToShader(camera, shader);
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE);
+			lightToShader(light, shader);
 
-		quad->render(GL_TRIANGLES);
-		shader->disable();
+			quad->render(GL_TRIANGLES);
+
+		}
+	}
+	shader->disable();
+}
+
+void SCN::Renderer::renderDeferredGeometryLights(GFX::Shader* shader, Camera* camera)
+{
+	vec2 size = CORE::getWindowSize();
+
+	shader->enable();
+
+	bufferToShader(shader);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+	cameraToShader(camera, shader);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glDepthMask(false);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	for (auto light : lights)
+	{
+		if (light->light_type == eLightType::DIRECTIONAL)
+			continue;
+		lightToShader(light, shader);
+
+
+		vec3 center = light->root.model.getTranslation();
+		float radius = light->max_distance;
+
+		Matrix44 model;
+		model.setTranslation(center.x, center.y, center.z);
+		model.scale(radius, radius, radius);
+
+		shader->setUniform("u_model", model);
+
+		glFrontFace(GL_CW);
+		sphere.render(GL_TRIANGLES);
+	}
+	glFrontFace(GL_CCW);
+	glDisable(GL_BLEND);
+	glDepthMask(true);
+
+}
+
+void SCN::Renderer::initDeferredFBOs()
+{
+	vec2 size = CORE::getWindowSize();
+
+	//Generate GBuffers
+	if (!gbuffers_fbo || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
+	{
+		gbuffers_fbo = new GFX::FBO();
+		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
+		CORE::BaseApplication::instance->window_resized = false;
 	}
 
-	else
+	if (!ssao_fbo || CORE::BaseApplication::instance->window_resized)
 	{
-		std::string current = Renderer::getShader(current_shader);
-		
-		shader = GFX::Shader::Get(current.c_str());
-		shader->enable();
-		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+		ssao_fbo = new GFX::FBO();
+		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
 
-		for (auto light : lights)
-		{
-			if (light->light_type == eLightType::DIRECTIONAL)
-			{
-				bufferToShader(shader);
-				cameraToShader(camera, shader);
-				glDisable(GL_DEPTH_TEST);
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_ONE);
-				lightToShader(light, shader);
-				
+	}
+}
 
-				quad->render(GL_TRIANGLES);
-			}
-		}
-		//ESFERAS
-		current += "_geometry";
-		shader = GFX::Shader::Get(current.c_str());
-		shader->enable();
+void SCN::Renderer::generateSSAO(Camera* camera)
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 
-		bufferToShader(shader);
-		shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
-		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
-		cameraToShader(camera, shader);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
-		glDepthMask(false);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-		for (auto light : lights)
-		{
-			if (light->light_type == eLightType::DIRECTIONAL)
-				continue;
-			lightToShader(light, shader);
-			
 
-			vec3 center = light->root.model.getTranslation();
-			float radius = light->max_distance;
+	GFX::Shader* shader = GFX::Shader::Get("ssao");
+	shader->enable();
+	shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
+	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 2);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / ssao_fbo->color_textures[0]->width, 1.0 / ssao_fbo->color_textures[0]->height));
 
-			Matrix44 model;
-			model.setTranslation(center.x, center.y, center.z);
-			model.scale(radius, radius, radius);
+	shader->setUniform3Array("u_random_points", (float*)(&random_points[0]), 64);
+	shader->setUniform("u_radius", ssao_radius);
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	shader->setUniform("u_front", camera->front);
 
-			shader->setUniform("u_model", model);
+	quad->render(GL_TRIANGLES);
+}
 
-			glFrontFace(GL_CW);
-			sphere.render(GL_TRIANGLES);
-		}
-		glFrontFace(GL_CCW);
-		glDisable(GL_BLEND);
-		glDepthMask(true);
+void SCN::Renderer::computeIlluminationDeferred()
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (skybox_cubemap)
+		renderSkybox(skybox_cubemap);
+
+	//render global illumination
+	renderDeferred();
+
+	if (!enable_dithering)
+	{
+		current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
+		renderTransparenciesForward();
 	}
 }
 
@@ -1001,6 +984,21 @@ void SCN::Renderer::bufferToShader(GFX::Shader* shader)
 	shader->setTexture("u_normal_texture", gbuffers_fbo->color_textures[1], 1);
 	shader->setTexture("u_extra_texture", gbuffers_fbo->color_textures[2], 2);
 	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 3);
+}
+
+void SCN::Renderer::materialToShader(GFX::Shader* shader, SCN::Material* material)
+{
+	
+	GFX::Texture* white = GFX::Texture::getWhiteTexture();
+	GFX::Texture* albedo_texture = material->textures[SCN::eTextureChannel::ALBEDO].texture;
+	GFX::Texture* emissive_texture = material->textures[SCN::eTextureChannel::EMISSIVE].texture;
+	GFX::Texture* metallic_roughness_texture = material->textures[SCN::eTextureChannel::METALLIC_ROUGHNESS].texture; //r channel occlusion, g metallic, b roughness
+
+	shader->setUniform("u_color", material->color);
+	shader->setTexture("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
+	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
+	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
+
 }
 
 void Renderer::renderTransparenciesForward()
@@ -1047,7 +1045,11 @@ void Renderer::showUI()
 		static int priority_current = 0;
 		ImGui::Combo("Priority", &priority_current, priority, IM_ARRAYSIZE(priority), 3);
 
-		if (priority_current == 0) current_priority = eRenderPriority::NOPRIORITY;
+		if (priority_current == 0)
+		{
+			enable_dithering = true;
+			current_priority = eRenderPriority::NOPRIORITY;
+		}
 		if (priority_current == 1) current_priority = eRenderPriority::ALPHA1;
 		if (priority_current == 2) current_priority = eRenderPriority::DISTANCE2CAMERA;
 
@@ -1155,7 +1157,8 @@ void Renderer::showUI()
 			{
 				ImGui::Checkbox("Show Buffers", &show_buffers);
 				ImGui::Checkbox("Show Global Pos", &show_globalpos);
-				ImGui::Checkbox("Dithering", &enable_dithering); 
+				if (current_priority != eRenderPriority::NOPRIORITY)
+					ImGui::Checkbox("Dithering", &enable_dithering); 
 				ImGui::Checkbox("Add SSA", &add_SSAO);
 				ImGui::SliderFloat("SSAO radius", &ssao_radius, 0.0, 50);
 				ImGui::SliderFloat("SSAO control factor", &control_SSAO_factor, 0.0, 50);

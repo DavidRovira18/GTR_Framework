@@ -1,6 +1,7 @@
 #pragma once
 #include "scene.h"
 #include "prefab.h"
+#include "../gfx/sphericalharmonics.h"
 
 #include "light.h"
 
@@ -12,6 +13,14 @@ namespace GFX {
 	class Mesh;
 	class FBO;
 }
+
+//struct to store probes
+struct sProbe {
+	vec3 pos; //where is located
+	vec3 local; //its ijk pos in the matrix
+	int index; //its index in the linear array
+	SphericalHarmonics sh; //coeffs
+};
 
 namespace SCN {
 
@@ -87,6 +96,11 @@ namespace SCN {
 		//SSAO
 		GFX::FBO* ssao_fbo = nullptr;
 		GFX::Texture* ssao_blur = nullptr;
+
+		//iradiance
+		GFX::FBO* irr_fbo = nullptr;
+		std::vector<sProbe> probes;
+		GFX::Texture* probes_texture = nullptr;
 
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;
@@ -176,6 +190,11 @@ namespace SCN {
 
 		void renderTransparenciesForward();
 		void renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc);
+
+		void renderProbe(sProbe& probe);
+		void captureProbe(sProbe& probe);
+		void captureIrradiance();
+		void uploadIrradianceCache();
 
 		void showUI();
 

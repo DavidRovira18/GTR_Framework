@@ -22,6 +22,8 @@ deferred_pbr quad.vs deferred_pbr.fs
 //SSAO
 ssao quad.vs ssao.fs
 
+//IRRADIANCE
+spherical_probe basic.vs spherical_probe.fs
 
 gamma quad.vs gamma.fs
 
@@ -142,12 +144,13 @@ in vec3 v_world_position;
 
 uniform samplerCube u_texture;
 uniform vec3 u_camera_position;
+uniform float u_skybox_intensity;
 out vec4 FragColor;
 
 void main()
 {
 	vec3 E = v_world_position - u_camera_position;
-	vec4 color = texture( u_texture, E );
+	vec4 color = texture( u_texture, E ) * u_skybox_intensity;
 	FragColor = color;
 }
 
@@ -426,6 +429,43 @@ float dither4x4(vec2 position, float brightness)
   }
 
   return brightness < limit ? 0.0 : 1.0;
+}
+
+\SphericalHarmonics
+const float Pi = 3.141592654;
+const float CosineA0 = Pi;
+const float CosineA1 = (2.0 * Pi) / 3.0;
+const float CosineA2 = Pi * 0.25;
+struct SH9 { float c[9]; }; //to store weights
+struct SH9Color { vec3 c[9]; }; //to store colors
+
+void SHCosineLobe(in vec3 dir, out SH9 sh) //SH9
+{
+	// Band 0
+	sh.c[0] = 0.282095 * CosineA0;
+	// Band 1
+	sh.c[1] = 0.488603 * dir.y * CosineA1; 
+	sh.c[2] = 0.488603 * dir.z * CosineA1;
+	sh.c[3] = 0.488603 * dir.x * CosineA1;
+	// Band 2
+	sh.c[4] = 1.092548 * dir.x * dir.y * CosineA2;
+	sh.c[5] = 1.092548 * dir.y * dir.z * CosineA2;
+	sh.c[6] = 0.315392 * (3.0 * dir.z * dir.z - 1.0) * CosineA2;
+	sh.c[7] = 1.092548 * dir.x * dir.z * CosineA2;
+	sh.c[8] = 0.546274 * (dir.x * dir.x - dir.y * dir.y) * CosineA2;
+}
+
+vec3 ComputeSHIrradiance(in vec3 normal, in SH9Color sh)
+{
+	// Compute the cosine lobe in SH, oriented about the normal direction
+	SH9 shCosine;
+	SHCosineLobe(normal, shCosine);
+	// Compute the SH dot product to get irradiance
+	vec3 irradiance = vec3(0.0);
+	for(int i = 0; i < 9; ++i)
+		irradiance += sh.c[i] * shCosine.c[i];
+
+	return irradiance;
 }
 
 //MY SHADERS 
@@ -1789,3 +1829,30 @@ void main() {
     FragColor = vec4(gamma(tonemapped_color * white_scale), 1.0);
 }
 
+\spherical_probe.fs
+
+#version 330 core
+
+#define NUM_PROBES 9
+
+#include "SphericalHarmonics"
+
+in vec3 v_world_position;
+in vec3 v_normal;
+
+uniform vec3 u_coeffs[NUM_PROBES];
+out vec4 FragColor;
+
+void main()
+{
+	vec4 color = vec4(1.0);
+	vec3 N = normalize(v_normal);
+
+	SH9Color sh;
+	for(int i = 0; i < NUM_PROBES; ++i)
+		sh.c[i] = u_coeffs[i];
+	
+	color.xyz = max(ComputeSHIrradiance(N, sh), vec3(0.0));
+	FragColor = color;
+
+}

@@ -41,7 +41,9 @@ namespace SCN {
 	enum eRenderMode {
 		FLAT,
 		LIGHTS,
-		DEFERRED
+		DEFERRED,
+		SHADOWMAP = 90,
+		NULLMODE = 100,
 	};
 
 	enum eLightsRender {
@@ -65,6 +67,13 @@ namespace SCN {
 		NOPRIORITY,
 		ALPHA1,
 		DISTANCE2CAMERA
+	};
+
+	struct sIrradianceHeader {
+		int num_probes;
+		vec3 dims;
+		vec3 start;
+		vec3 end;
 	};
 
 	// This class is in charge of rendering anything in our system.
@@ -101,6 +110,7 @@ namespace SCN {
 		GFX::FBO* irr_fbo = nullptr;
 		std::vector<sProbe> probes;
 		GFX::Texture* probes_texture = nullptr;
+		bool capture_irradiance = false;
 
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;
@@ -108,12 +118,10 @@ namespace SCN {
 		bool add_SSAO = true;
 		float control_SSAO_factor = 3.0f;
 
-		bool generate_gbuffers = false;
 		bool show_buffers = false;
 		bool show_globalpos = false;
 		bool enable_dithering = true;
 
-		bool generate_shadowmap = false;
 		bool show_shadowmaps = false;
 
 		bool enable_specular = false;
@@ -159,10 +167,7 @@ namespace SCN {
 		std::vector<vec3> generateSpherePoints(int num, float radius, bool hemi);
 
 		//render the skybox
-		void renderSkybox(GFX::Texture* cubemap);
-	
-		//to render one node from the prefab and its children
-		void renderNode(SCN::Node* node, Camera* camera);
+		void renderSkybox(GFX::Texture* cubemap, float intensity);
 
 		//to render one mesh given its material and transformation matrix
 		void renderMeshWithMaterial(RenderCall* rc);
@@ -209,9 +214,9 @@ namespace SCN {
 
 		void storeDrawCallNoPriority(SCN::Node* node, Camera* camera);
 
-		void prioritySwitch();
+		void prioritySwitch(eRenderMode mode = eRenderMode::NULLMODE);
 
-		void renderRenderCalls(RenderCall* rc);
+		void renderRenderCalls(RenderCall* rc, eRenderMode mode = eRenderMode::NULLMODE);
 
 		void renderShadowmaps();
 

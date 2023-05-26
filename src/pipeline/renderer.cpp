@@ -25,16 +25,6 @@ GFX::Mesh sphere;
 GFX::Mesh* quad;
 constexpr auto MAX_LIGHTS = 12;
 
-
-sProbe probe;
-
-struct sIrradianceHeader {
-	int num_probes;
-	vec3 dims;
-	vec3 start;
-	vec3 end;
-};
-
 sIrradianceHeader irradiance_cache_info;
 
 Renderer::Renderer(const char* shader_atlas_filename)
@@ -62,9 +52,6 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	quad = GFX::Mesh::getQuad();
 
 	random_points = generateSpherePoints(128, 1.0, false);
-
-	probe.pos.set(65, 65, 65);
-	probe.sh.coeffs[0].set(1, 0, 0);
 }
 
 void Renderer::setupScene(Camera* camera)
@@ -81,6 +68,11 @@ void Renderer::setupScene(Camera* camera)
 	if(current_mode != eRenderMode::FLAT)
 		generateShadowMaps();
 
+	if (capture_irradiance)
+	{
+		captureIrradiance();
+		capture_irradiance = false;
+	}
 	vec2 size = CORE::getWindowSize();
 
 	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
@@ -201,8 +193,8 @@ const char* Renderer::getShader(eShaders current)
 void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 {
 	this->scene = scene;
-	setupScene(camera);
 
+	setupScene(camera);
 
 	if (current_mode == eRenderMode::DEFERRED)
 		renderFrameDeferred(scene, camera);
@@ -230,7 +222,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 		//render skybox
 		if(skybox_cubemap && current_shader != eShaders::sFLAT)
-			renderSkybox(skybox_cubemap);
+			renderSkybox(skybox_cubemap, scene->skybox_intensity);
 
 		prioritySwitch();
 
@@ -245,8 +237,6 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 {
 	vec2 size = CORE::getWindowSize();
-
-	generate_gbuffers = true;
 	
 	initDeferredFBOs();
 
@@ -259,8 +249,6 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		//gbuffers_fbo->enableAllBuffers();
 		prioritySwitch();
 	gbuffers_fbo->unbind();
-
-	generate_gbuffers = false;
 
 	if (show_buffers)
 		showGBuffers(size, camera);
@@ -275,6 +263,12 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			//Compute illumination
 			illumination_fbo->bind();
 				computeIlluminationDeferred();
+				glDisable(GL_BLEND);
+				glEnable(GL_DEPTH_TEST);
+
+				for (int i = 0; i < probes.size(); ++i)
+					renderProbe(probes[i]);
+
 			illumination_fbo->unbind();
 
 			if (enable_tonemapper)
@@ -290,7 +284,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	
 }
 
-void Renderer::renderSkybox(GFX::Texture* cubemap)
+void Renderer::renderSkybox(GFX::Texture* cubemap, float intensity)
 {
 	Camera* camera = Camera::current;
 
@@ -311,63 +305,11 @@ void Renderer::renderSkybox(GFX::Texture* cubemap)
 	shader->setUniform("u_model", m);
 	cameraToShader(camera, shader);
 	shader->setUniform("u_texture", cubemap, 0);
+	shader->setUniform("u_skybox_intensity", intensity);
 	sphere.render(GL_TRIANGLES);
 	shader->disable();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_DEPTH_TEST);
-}
-
-//renders a node of the prefab and its children
-void Renderer::renderNode(SCN::Node* node, Camera* camera)
-{
-	if (!node->visible)
-		return;
-
-	//compute global matrix
-	Matrix44 node_model = node->getGlobalMatrix(true);
-
-	//does this node have a mesh? then we must render it
-	if (node->mesh && node->material)
-	{
-		//compute the bounding box of the object in world space (by using the mesh bounding box transformed to world space)
-		BoundingBox world_bounding = transformBoundingBox(node_model,node->mesh->box);
-		
-		//if bounding box is inside the camera frustum then the object is probably visible
-		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) )
-		{
-			RenderCall* rc;
-			rc->mesh = node->mesh;
-			rc->material = node->material;
-			rc->model = node->model;
-			if(render_boundaries)
-				node->mesh->renderBounding(node_model, true);
-			switch(current_mode)
-			{
-				case (eRenderMode::FLAT): 
-				{
-					if (current_shader == eShaders::sFLAT)
-					{
-						renderMeshWithMaterialFlat(rc);
-						break;
-					}
-					renderMeshWithMaterial(rc);
-					break;
-				}
-				case (eRenderMode::LIGHTS): 
-				{
-					if (generate_shadowmap)
-						renderMeshWithMaterialFlat(rc);
-					else
-						renderMeshWithMaterialLight(rc);
-					break;
-				}
-			}
-		}
-	}
-
-	//iterate recursively with children
-	for (int i = 0; i < node->children.size(); ++i)
-		renderNode( node->children[i], camera);
 }
 
 //renders a mesh given its transform and material
@@ -952,7 +894,7 @@ void SCN::Renderer::computeIlluminationDeferred()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	if (skybox_cubemap)
-		renderSkybox(skybox_cubemap);
+		renderSkybox(skybox_cubemap, scene->skybox_intensity);
 
 	//render global illumination
 	renderDeferred();
@@ -1060,17 +1002,20 @@ void SCN::Renderer::renderProbe(sProbe& probe)
 	shader->setUniform3Array("u_coeffs", (float*)probe.sh.coeffs, 9);
 
 	sphere.render(GL_TRIANGLES);
-
 }
 
 void SCN::Renderer::captureProbe(sProbe& probe)
 {
 	FloatImage images[6]; //here we will store the six views
 
+	Camera* app_camera = Camera::current;
 	Camera cam;
 	//set the fov to 90 and the aspect to 1
-	cam.setPerspective(90, 1, 0.1, 1000);
+	cam.setPerspective(90, 1, app_camera->near_plane, app_camera->far_plane);
 
+	eShaders state_shader = current_shader;
+	current_shader = eShaders::sLIGHTS_MULTI;
+	
 	if (!irr_fbo)
 	{
 		irr_fbo = new GFX::FBO();
@@ -1089,7 +1034,18 @@ void SCN::Renderer::captureProbe(sProbe& probe)
 
 		//render the scene from this point of view
 		irr_fbo->bind();
-		renderFrameForward(scene, &cam);
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+
+			glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			GFX::checkGLErrors();
+
+			//render skybox
+			if (skybox_cubemap && current_shader != eShaders::sFLAT)
+				renderSkybox(skybox_cubemap, scene->skybox_intensity);
+			prioritySwitch(eRenderMode::LIGHTS);
 		irr_fbo->unbind();
 
 		//read the pixels back and store in a FloatImage
@@ -1098,6 +1054,8 @@ void SCN::Renderer::captureProbe(sProbe& probe)
 
 	//compute the coefficients given the six images
 	probe.sh = computeSH(images);
+
+	current_shader = state_shader;
 
 }
 
@@ -1130,15 +1088,16 @@ void SCN::Renderer::captureIrradiance()
 		for (int y = 0; y < dim.y; ++y)
 			for (int x = 0; x < dim.x; ++x)
 			{
-				sProbe p;
+				int index = x + y * dim.x + z * dim.x * dim.y;
+				sProbe& p = probes[index];
+
 				p.local.set(x, y, z);
 
 				//index in the linear array
-				p.index = x + y * dim.x + z * dim.x * dim.y;
+				p.index = index;
 
 				//and its position
 				p.pos = start_pos + delta * vec3(x, y, z);
-				probes[p.index] = p;
 			}
 
 
@@ -1329,6 +1288,13 @@ void Renderer::showUI()
 				
 				ImGui::TreePop();
 			}
+
+			if (ImGui::TreeNode("Irradiance"))
+			{
+				if (ImGui::Button("Update Probes"))
+					capture_irradiance = true;
+				ImGui::TreePop();
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -1439,7 +1405,7 @@ void Renderer::storeDrawCallNoPriority(SCN::Node* node, Camera* camera)
 		storeDrawCallNoPriority(node->children[i], camera);
 }
 
-void Renderer::prioritySwitch()
+void Renderer::prioritySwitch(eRenderMode mode)
 {
 	switch (current_priority)
 	{
@@ -1448,7 +1414,7 @@ void Renderer::prioritySwitch()
 		for (int i = 0; i < render_calls.size(); ++i)
 		{
 			RenderCall rc = render_calls[i];
-			renderRenderCalls(&rc);
+			renderRenderCalls(&rc, mode);
 		}
 		break;
 	};
@@ -1458,14 +1424,14 @@ void Renderer::prioritySwitch()
 		for (int i = 0; i < render_calls_opaque.size(); ++i)
 		{
 			RenderCall rc = render_calls_opaque[i];
-			renderRenderCalls(&rc);
+			renderRenderCalls(&rc, mode);
 		}
 
 		//render transparent entities 
 		for (int i = 0; i < render_calls.size(); ++i)
 		{
 			RenderCall rc = render_calls[i];
-			renderRenderCalls(&rc);
+			renderRenderCalls(&rc, mode);
 		}
 		break;
 	}
@@ -1492,8 +1458,6 @@ void Renderer::prioritySwitch()
 void Renderer::generateShadowMaps()
 {
 	GFX::startGPULabel("Generate shadowmaps");
-
-	generate_shadowmap = true;
 
 	for (auto light : lights)
 	{
@@ -1541,14 +1505,12 @@ void Renderer::generateShadowMaps()
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		prioritySwitch();
+		prioritySwitch(eRenderMode::SHADOWMAP);
 		
 		light->shadowmap_fbo->unbind();
 
 		light->shadow_viewproj = camera->viewprojection_matrix;
 	}
-
-	generate_shadowmap = false;
 	GFX::endGPULabel();
 }
 
@@ -1578,14 +1540,15 @@ std::vector<vec3> SCN::Renderer::generateSpherePoints(int num, float radius, boo
 
 }
 
-void Renderer::renderRenderCalls(RenderCall* rc)
+void Renderer::renderRenderCalls(RenderCall* rc, eRenderMode mode)
 {
 	if (rc->mesh && rc->material)
 	{
 		if(render_boundaries)
 			rc->mesh->renderBounding(rc->model, true);
 
-		switch (current_mode)
+		mode = mode == eRenderMode::NULLMODE ? mode = current_mode : mode;
+		switch (mode)
 		{
 		case (eRenderMode::FLAT):
 		{
@@ -1594,21 +1557,16 @@ void Renderer::renderRenderCalls(RenderCall* rc)
 		}
 		case (eRenderMode::LIGHTS):
 		{
-			if (generate_shadowmap)
-				renderMeshWithMaterialFlat(rc);
-			else
-				renderMeshWithMaterialLight(rc);
+			renderMeshWithMaterialLight(rc);
 			break;
 		}
 		case (eRenderMode::DEFERRED):
 		{
-			if (generate_shadowmap)
-				renderMeshWithMaterialFlat(rc);
-
-			if (generate_gbuffers)
-				renderDeferredGBuffers(rc);
+			renderDeferredGBuffers(rc);
 			break;
 		}
+		case(eRenderMode::SHADOWMAP):
+			renderMeshWithMaterialFlat(rc);
 		}
 	}
 }

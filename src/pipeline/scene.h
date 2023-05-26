@@ -35,6 +35,7 @@ namespace SCN {
 		REFLECTION_PROBE = 10,
 		PLANAR_REFLECTION = 11,
 		IRRADIANCE_VOLUME = 12,
+		IRRADIANCE_CACHE = 13,
 
 		VOLUME = 20,
 		SPLINE = 21,
@@ -131,6 +132,7 @@ namespace SCN {
 
 		Vector3f background_color;
 		Vector3f ambient_light;
+		float skybox_intensity;
 		std::string skybox_filename;
 		Camera main_camera;
 

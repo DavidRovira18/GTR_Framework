@@ -91,7 +91,7 @@ namespace SCN {
 		//RENDER CALLS AND PRIORITY
 		std::vector<RenderCall> render_calls;
 		std::vector<RenderCall> render_calls_opaque;
-		eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
+		eRenderPriority current_priority = eRenderPriority::DISTANCE2CAMERA;
 		//SHADER
 		eShaders current_shader = eShaders::sDEFERRED;
 		//LIGHTS

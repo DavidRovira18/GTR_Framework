@@ -1939,6 +1939,7 @@ void main()
 
 	//now we can use the coefficients to compute the irradiance
 	vec3 irradiance = max(vec3(0.0), ComputeSHIrradiance( N, sh ) * u_irr_multiplier);
-	//irradiance *= albedo.xyz;
+	irradiance *= albedo.xyz;
+
 	FragColor = vec4(irradiance, 1.0);
 }

@@ -711,11 +711,11 @@ void SCN::Renderer::renderDeferred()
 	GFX::Shader* shader = nullptr;
 	renderDeferredGlobal(shader);
 
+	applyIrradiance();
+
 	Camera* camera = Camera::current;
 	vec2 size = CORE::getWindowSize();
 	
-	applyIrradiance();
-
 	if (show_globalpos)
 		renderDeferredGlobalPos(shader, camera);
 
@@ -741,7 +741,7 @@ void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
 	vec2 size = CORE::getWindowSize();
 
 	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	//GFX::Mesh* quad = GFX::Mesh::getQuad();
 
 	shader = GFX::Shader::Get("deferred_global");
@@ -749,6 +749,8 @@ void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
 
 	bufferToShader(shader);
 	shader->setUniform("u_ambient_light", scene->ambient_light ^ 2.2f);
+	//shader->setUniform("u_ambient_light", vec3());
+
 	shader->setTexture("u_ao_texture", ssao_fbo->color_textures[0], 4);
 	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 	shader->setUniform("u_add_SSAO", add_SSAO);
@@ -796,12 +798,13 @@ void SCN::Renderer::renderDeferredDirectionalLights(GFX::Shader* shader, Camera*
 	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
 	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 
+	bufferToShader(shader);
+	cameraToShader(camera, shader);
+
 	for (auto light : lights)
 	{
 		if (light->light_type == eLightType::DIRECTIONAL)
 		{
-			bufferToShader(shader);
-			cameraToShader(camera, shader);
 			glDisable(GL_DEPTH_TEST);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE, GL_ONE);
@@ -825,10 +828,11 @@ void SCN::Renderer::renderDeferredGeometryLights(GFX::Shader* shader, Camera* ca
 	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 	cameraToShader(camera, shader);
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	glDepthFunc(GL_GREATER);
 	glDepthMask(false);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
+	glDisable(GL_CULL_FACE);
 	for (auto light : lights)
 	{
 		if (light->light_type == eLightType::DIRECTIONAL)
@@ -848,6 +852,7 @@ void SCN::Renderer::renderDeferredGeometryLights(GFX::Shader* shader, Camera* ca
 		glFrontFace(GL_CW);
 		sphere.render(GL_TRIANGLES);
 	}
+	glDepthFunc(GL_LESS);
 	glFrontFace(GL_CCW);
 	glDisable(GL_BLEND);
 	glDepthMask(true);
@@ -1185,7 +1190,7 @@ void SCN::Renderer::applyIrradiance()
 	GFX::Shader* shader = GFX::Shader::Get("irradiance");
 
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	shader->enable();
@@ -1530,7 +1535,7 @@ void Renderer::prioritySwitch(eRenderMode mode)
 		for (int i = 0; i < render_calls_opaque.size(); ++i)
 		{
 			RenderCall rc = render_calls_opaque[i];
-			renderRenderCalls(&rc);
+			renderRenderCalls(&rc, mode);
 		}
 
 		//render entities

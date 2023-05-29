@@ -24,6 +24,7 @@ ssao quad.vs ssao.fs
 
 //IRRADIANCE
 spherical_probe basic.vs spherical_probe.fs
+irradiance quad.vs irradiance.fs
 
 gamma quad.vs gamma.fs
 
@@ -1260,6 +1261,8 @@ void main()
 	vec3 color = albedo.xyz * light;
 
 	FragColor = vec4(color, 1.0);
+
+	gl_FragDepth = depth;
 	//FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
 }
@@ -1854,5 +1857,88 @@ void main()
 	
 	color.xyz = max(ComputeSHIrradiance(N, sh), vec3(0.0));
 	FragColor = color;
+}
 
+\irradiance.fs
+
+#version 330 core
+
+#include "SphericalHarmonics"
+
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+uniform sampler2D u_depth_texture;
+
+uniform vec3 u_irr_start;
+uniform vec3 u_irr_end;
+uniform vec3 u_irr_dims;
+uniform int u_num_probes;
+
+uniform float u_irr_normal_distance;
+uniform vec3 u_irr_delta;
+
+uniform sampler2D u_probes_texture;
+
+uniform vec2 u_iRes;
+uniform mat4 u_ivp;
+
+uniform float u_irr_multiplier;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 color = vec3(0.0);
+
+	vec3 albedo = texture(u_albedo_texture, uv).rgb;
+	vec3 emissive_light = texture(u_extra_texture, uv).rgb;
+	vec4 normal = texture(u_normal_texture, uv);
+	vec3 N = normalize(normal.xyz*2.0 - vec3(1.0));
+
+	//computing nearest probe index based on world position
+	vec3 irr_range = u_irr_end - u_irr_start;
+	vec3 irr_local_pos = clamp( world_pos - u_irr_start + N * u_irr_normal_distance, //offset a little 
+	vec3(0.0), irr_range );
+
+	//convert from world pos to grid pos
+	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
+
+	//round values as we cannot fetch between rows for now
+	vec3 local_indices = round( irr_norm_pos );
+
+	//compute in which row is the probe stored
+	float row = local_indices.x + 
+	local_indices.y * u_irr_dims.x + 
+	local_indices.z * u_irr_dims.x * u_irr_dims.y;
+
+	//find the UV.y coord of that row in the probes texture
+	float row_uv = (row + 1.0) / (u_num_probes + 1.0);
+
+	SH9Color sh;
+
+	//fill the coefficients
+	const float d_uvx = 1.0 / 9.0;
+	for(int i = 0; i < 9; ++i)
+	{
+		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
+		sh.c[i] = texture( u_probes_texture, coeffs_uv).xyz;
+	}
+
+	//now we can use the coefficients to compute the irradiance
+	vec3 irradiance = max(vec3(0.0), ComputeSHIrradiance( N, sh ) * u_irr_multiplier);
+	//irradiance *= albedo.xyz;
+	FragColor = vec4(irradiance, 1.0);
 }

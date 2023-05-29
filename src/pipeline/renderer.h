@@ -86,14 +86,14 @@ namespace SCN {
 
 
 		//RENDERING MODE
-		eRenderMode current_mode = eRenderMode::FLAT;
+		eRenderMode current_mode = eRenderMode::DEFERRED;
 		eLightsRender current_lights_render = eLightsRender::MULTIPASS;
 		//RENDER CALLS AND PRIORITY
 		std::vector<RenderCall> render_calls;
 		std::vector<RenderCall> render_calls_opaque;
 		eRenderPriority current_priority = eRenderPriority::NOPRIORITY;
 		//SHADER
-		eShaders current_shader = eShaders::sTEXTURE;
+		eShaders current_shader = eShaders::sDEFERRED;
 		//LIGHTS
 		std::vector<LightEntity*> lights;
 		std::vector<LightEntity*> visible_lights;
@@ -111,6 +111,10 @@ namespace SCN {
 		std::vector<sProbe> probes;
 		GFX::Texture* probes_texture = nullptr;
 		bool capture_irradiance = false;
+		bool show_probes = false;
+		sIrradianceHeader irradiance_cache_info;
+		float irradiance_multiplier = 1.0f;
+
 
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;
@@ -200,6 +204,8 @@ namespace SCN {
 		void captureProbe(sProbe& probe);
 		void captureIrradiance();
 		void uploadIrradianceCache();
+		void applyIrradiance();
+		void loadIrradianceCache();
 
 		void showUI();
 

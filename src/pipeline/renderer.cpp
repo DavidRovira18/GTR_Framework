@@ -25,8 +25,6 @@ GFX::Mesh sphere;
 GFX::Mesh* quad;
 constexpr auto MAX_LIGHTS = 12;
 
-sIrradianceHeader irradiance_cache_info;
-
 Renderer::Renderer(const char* shader_atlas_filename)
 {
 	render_wireframe = false;
@@ -52,6 +50,8 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	quad = GFX::Mesh::getQuad();
 
 	random_points = generateSpherePoints(128, 1.0, false);
+
+	irradiance_cache_info.num_probes = 0;
 }
 
 void Renderer::setupScene(Camera* camera)
@@ -263,12 +263,6 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			//Compute illumination
 			illumination_fbo->bind();
 				computeIlluminationDeferred();
-				glDisable(GL_BLEND);
-				glEnable(GL_DEPTH_TEST);
-
-				for (int i = 0; i < probes.size(); ++i)
-					renderProbe(probes[i]);
-
 			illumination_fbo->unbind();
 
 			if (enable_tonemapper)
@@ -719,12 +713,27 @@ void SCN::Renderer::renderDeferred()
 
 	Camera* camera = Camera::current;
 	vec2 size = CORE::getWindowSize();
+	
+	applyIrradiance();
 
 	if (show_globalpos)
 		renderDeferredGlobalPos(shader, camera);
 
 	else
+	{
 		renderDeferredLights(shader, camera);
+
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		//glDepthFunc(GL_LESS);
+
+		//Irradiance cache
+		if (show_probes)
+		{
+			for (int i = 0; i < probes.size(); ++i)
+				renderProbe(probes[i]);
+		}
+	}
 }
 
 void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
@@ -896,7 +905,7 @@ void SCN::Renderer::computeIlluminationDeferred()
 	if (skybox_cubemap)
 		renderSkybox(skybox_cubemap, scene->skybox_intensity);
 
-	//render global illumination
+	//render illumination
 	renderDeferred();
 
 	if (!enable_dithering)
@@ -1011,7 +1020,7 @@ void SCN::Renderer::captureProbe(sProbe& probe)
 	Camera* app_camera = Camera::current;
 	Camera cam;
 	//set the fov to 90 and the aspect to 1
-	cam.setPerspective(90, 1, app_camera->near_plane, app_camera->far_plane);
+	cam.setPerspective(90, 1, 0.1, app_camera->far_plane);
 
 	eShaders state_shader = current_shader;
 	current_shader = eShaders::sLIGHTS_MULTI;
@@ -1100,7 +1109,9 @@ void SCN::Renderer::captureIrradiance()
 				p.pos = start_pos + delta * vec3(x, y, z);
 			}
 
+	bool last_state = show_probes;
 
+	show_probes = false;
 	//now compute the coeffs for every probe
 	for (int iP = 0; iP < probes.size(); ++iP)
 	{
@@ -1108,12 +1119,26 @@ void SCN::Renderer::captureIrradiance()
 		sProbe& p = probes[iP];
 		captureProbe(p);
 	}
+	show_probes = last_state;
 
 	irradiance_cache_info.dims = dim;
 	//irradiance_cache_info.num_probes = 
 
-}
+	FILE* f = fopen("irradiance_cache.bin", "wb");
+	if (f == NULL)
+		return;
 
+	irradiance_cache_info.dims = dim;
+	irradiance_cache_info.start = start_pos;
+	irradiance_cache_info.end = end_pos;
+	irradiance_cache_info.num_probes = probes.size();
+	//save data
+	fwrite(&irradiance_cache_info, sizeof(irradiance_cache_info), 1, f);
+	fwrite(&probes[0], sizeof(sProbe), probes.size(), f);
+	fclose(f);
+
+	uploadIrradianceCache();
+}
 
 
 void SCN::Renderer::uploadIrradianceCache()
@@ -1151,6 +1176,63 @@ void SCN::Renderer::uploadIrradianceCache()
 
 }
 
+void SCN::Renderer::applyIrradiance()
+{
+	if (!probes_texture)
+		return;
+
+	Camera* camera = Camera::current;
+	GFX::Shader* shader = GFX::Shader::Get("irradiance");
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	shader->enable();
+	bufferToShader(shader);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / gbuffers_fbo->width, 1.0 / gbuffers_fbo->height));
+	shader->setUniform("u_camera_position", camera->eye);
+
+	shader->setUniform("u_irr_start", irradiance_cache_info.start);
+	shader->setUniform("u_irr_end", irradiance_cache_info.end);
+	shader->setUniform("u_irr_dims", irradiance_cache_info.dims);
+	shader->setUniform("u_num_probes", irradiance_cache_info.num_probes);
+	shader->setTexture("u_probes_texture", probes_texture, 5);
+
+	shader->setUniform("u_irr_normal_distance", 5.0f);
+
+	//compute the vector from one corner to the other
+	vec3 delta = (irradiance_cache_info.end - irradiance_cache_info.start);
+
+	//and scale it down according to the subdivisions
+	//we substract one to be sure the last probe is at end pos
+	delta.x /= (irradiance_cache_info.dims.x - 1);
+	delta.y /= (irradiance_cache_info.dims.y - 1);
+	delta.z /= (irradiance_cache_info.dims.z - 1);
+
+	shader->setUniform("u_irr_delta", delta);
+
+	shader->setUniform("u_irr_multiplier", irradiance_multiplier);
+
+	quad->render(GL_TRIANGLES);
+}
+
+void SCN::Renderer::loadIrradianceCache()
+{
+	FILE* f = fopen("irradiance_cache.bin", "rb");
+	if (f == NULL)
+		return;
+
+	//load data
+	fread(&irradiance_cache_info, sizeof(irradiance_cache_info), 1, f);
+	probes.resize(irradiance_cache_info.num_probes);
+	fread(&probes[0], sizeof(sProbe), irradiance_cache_info.num_probes, f);
+	fclose(f);
+
+	uploadIrradianceCache();
+}
+
 #ifndef SKIP_IMGUI
 
 void Renderer::showUI()
@@ -1162,7 +1244,7 @@ void Renderer::showUI()
 	if (ImGui::TreeNode("Rendering Priority"))
 	{
 		const char* priority[] = { "Normal", "Opacity", "Dist2cam" };
-		static int priority_current = 0;
+		static int priority_current = current_priority;
 		ImGui::Combo("Priority", &priority_current, priority, IM_ARRAYSIZE(priority), 3);
 
 		if (priority_current == 0)
@@ -1180,8 +1262,8 @@ void Renderer::showUI()
 	if (ImGui::TreeNode("Rendering Mode"))
 	{
 		const char* mode[] = { "Flat", "Lights", "Deferred" };
-		static int mode_current = 0;
-		ImGui::Combo("RenderMode", &mode_current, mode, IM_ARRAYSIZE(mode), 2);
+		static int mode_current = current_mode;
+		ImGui::Combo("RenderMode",  &mode_current, mode, IM_ARRAYSIZE(mode), 2);
 
 		if (mode_current == 0)
 		{
@@ -1293,6 +1375,13 @@ void Renderer::showUI()
 			{
 				if (ImGui::Button("Update Probes"))
 					capture_irradiance = true;
+				ImGui::SameLine();
+				if (ImGui::Button("Load Probes"))
+					loadIrradianceCache();
+				ImGui::Checkbox("Show irradiance cache", &show_probes);
+
+				ImGui::SliderFloat("Irradiance multiplier", &irradiance_multiplier, 0.0, 10.0);
+
 				ImGui::TreePop();
 			}
 		}

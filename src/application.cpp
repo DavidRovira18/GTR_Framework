@@ -47,6 +47,9 @@ Application::Application()
 	//This class will be the one in charge of rendering all 
 	renderer = new SCN::Renderer(shader_atlas_filename); //here so we have opengl ready in constructor
 
+	//load irradiance cache
+	renderer->loadIrradianceCache();
+
 	//our scene editor
 	editor = new SceneEditor(scene, renderer);
 

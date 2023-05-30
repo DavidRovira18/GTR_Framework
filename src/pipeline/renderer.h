@@ -114,6 +114,7 @@ namespace SCN {
 		bool show_probes = false;
 		sIrradianceHeader irradiance_cache_info;
 		float irradiance_multiplier = 1.0f;
+		bool show_irradiance = false;
 
 
 		std::vector<Vector3f> random_points;

@@ -711,7 +711,8 @@ void SCN::Renderer::renderDeferred()
 	GFX::Shader* shader = nullptr;
 	renderDeferredGlobal(shader);
 
-	applyIrradiance();
+	if(show_irradiance)
+		applyIrradiance();
 
 	Camera* camera = Camera::current;
 	vec2 size = CORE::getWindowSize();
@@ -748,7 +749,7 @@ void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
 	shader->enable();
 
 	bufferToShader(shader);
-	shader->setUniform("u_ambient_light", scene->ambient_light ^ 2.2f);
+	shader->setUniform("u_ambient_light", show_irradiance ? 0.0 : scene->ambient_light ^ 2.2f);
 	//shader->setUniform("u_ambient_light", vec3());
 
 	shader->setTexture("u_ao_texture", ssao_fbo->color_textures[0], 4);
@@ -1378,6 +1379,8 @@ void Renderer::showUI()
 
 			if (ImGui::TreeNode("Irradiance"))
 			{
+				ImGui::Checkbox("Render with irradiance", &show_irradiance);
+
 				if (ImGui::Button("Update Probes"))
 					capture_irradiance = true;
 				ImGui::SameLine();

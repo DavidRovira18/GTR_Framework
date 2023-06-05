@@ -25,6 +25,9 @@ GFX::Mesh sphere;
 GFX::Mesh* quad;
 constexpr auto MAX_LIGHTS = 12;
 
+//create the probe
+sReflectionProbe probe;
+
 Renderer::Renderer(const char* shader_atlas_filename)
 {
 	render_wireframe = false;
@@ -52,6 +55,20 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	random_points = generateSpherePoints(128, 1.0, false);
 
 	irradiance_cache_info.num_probes = 0;
+
+	
+
+	////set PROBE up
+	//probe->pos.set(90, 56, -72);
+	//probe->cubemap = new GFX::Texture();
+	//probe->cubemap->createCubemap(
+	//	512, 512, 	//size
+	//	NULL, 	//data
+	//	GL_RGB, GL_UNSIGNED_INT, true);	//mipmaps
+
+	//	//add it to the list
+	//reflection_probes.push_back(probe);
+	probe.pos.set(50,50,50);
 }
 
 void Renderer::setupScene(Camera* camera)
@@ -225,6 +242,8 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 			renderSkybox(skybox_cubemap, scene->skybox_intensity);
 
 		prioritySwitch();
+
+		renderReflectionProbe(probe);
 
 	illumination_fbo->unbind();
 	
@@ -563,6 +582,8 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 
 		lightToShader(light, shader);
 
+		shader->setTexture("u_environment", skybox_cubemap, 9);
+		shader->setUniform("u_enable_reflections", enable_reflections);
 		//do the draw call that renders the mesh into the screen
 		rc->mesh->render(GL_TRIANGLES);
 
@@ -969,7 +990,7 @@ void SCN::Renderer::materialToShader(GFX::Shader* shader, SCN::Material* materia
 	shader->setTexture("u_albedo_texture", albedo_texture ? albedo_texture : white, 0);
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
 	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
-
+	shader->setUniform("u_mat_properties", vec2(material->metallic_factor, material->roughness_factor));
 }
 
 void Renderer::renderTransparenciesForward()
@@ -1239,6 +1260,66 @@ void SCN::Renderer::loadIrradianceCache()
 	uploadIrradianceCache();
 }
 
+void SCN::Renderer::captureReflection(sReflectionProbe& probe)
+{
+	if (!reflections_fbo)
+		reflections_fbo = new GFX::FBO();
+
+	Camera camera;
+	camera.setPerspective(90, 1, 0.1, 1000);
+
+	if (!probe.cubemap)
+	{
+		probe.cubemap = new GFX::Texture();
+		probe.cubemap->createCubemap(
+			256, 256, 	//size
+			nullptr, 	//data
+			GL_RGB, GL_FLOAT);	//mipmaps
+	}
+
+	//render the view from every side
+	for (int i = 0; i < 6; ++i)
+	{
+		//assign cubemap face to FBO
+		reflections_fbo->setTexture(probe.cubemap, i);
+
+		vec3 eye = probe.pos;
+		vec3 center = probe.pos + cubemapFaceNormals[i][2];
+		vec3 up = cubemapFaceNormals[i][1];
+		camera.lookAt(eye, center, up);
+		camera.enable();
+
+		reflections_fbo->bind();
+
+			prioritySwitch(eRenderMode::LIGHTS);	//TODO: check mode
+
+		reflections_fbo->unbind();
+	}
+
+	//generate the mipmaps
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	probe.cubemap->generateMipmaps();
+
+
+}
+
+void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
+{
+
+	GFX::Texture* texture = probe.cubemap ? probe.cubemap : skybox_cubemap;
+	Camera* camera = Camera::current;
+	GFX::Shader* shader = GFX::Shader::Get("reflectionProbe");
+	shader->enable();
+
+	cameraToShader(camera, shader);
+	Matrix44 model;
+	model.setTranslation(probe.pos.x, probe.pos.y, probe.pos.z);
+	model.scale(10, 10, 10);
+	shader->setUniform("u_model", model);
+	shader->setUniform("u_texture", texture , 0);
+	sphere.render(GL_TRIANGLES);
+}
+
 #ifndef SKIP_IMGUI
 
 void Renderer::showUI()
@@ -1334,7 +1415,21 @@ void Renderer::showUI()
 					ImGui::Checkbox("Show Shadowmaps", &show_shadowmaps);
 				ImGui::Checkbox("Use normalmaps", &enable_normalmap);
 
+
 				ImGui::TreePop();
+			}
+
+			if (current_shader != eShaders::sLIGHTS_SINGLE)
+			{
+				if (ImGui::TreeNode("Reflections"))
+				{
+					ImGui::Checkbox("Enable reflections", &enable_reflections);
+
+					if (ImGui::Button("Update Reflections"))
+						captureReflection(probe);	//TODO put it right
+
+					ImGui::TreePop();
+				}
 			}
 		}
 		if (mode_current == 2)
@@ -1644,7 +1739,7 @@ void Renderer::renderRenderCalls(RenderCall* rc, eRenderMode mode)
 		if(render_boundaries)
 			rc->mesh->renderBounding(rc->model, true);
 
-		mode = mode == eRenderMode::NULLMODE ? mode = current_mode : mode;
+		mode = (mode == eRenderMode::NULLMODE) ? current_mode : mode;
 		switch (mode)
 		{
 		case (eRenderMode::FLAT):

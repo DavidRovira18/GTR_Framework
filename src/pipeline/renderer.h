@@ -76,6 +76,13 @@ namespace SCN {
 		vec3 end;
 	};
 
+	//struct to store reflection probes info
+	struct sReflectionProbe {
+		vec3 pos;
+		GFX::Texture* cubemap = NULL;
+	};
+
+
 	// This class is in charge of rendering anything in our system.
 	// Separating the render from anything else makes the code cleaner
 	class Renderer
@@ -86,14 +93,14 @@ namespace SCN {
 
 
 		//RENDERING MODE
-		eRenderMode current_mode = eRenderMode::DEFERRED;
+		eRenderMode current_mode = eRenderMode::LIGHTS;
 		eLightsRender current_lights_render = eLightsRender::MULTIPASS;
 		//RENDER CALLS AND PRIORITY
 		std::vector<RenderCall> render_calls;
 		std::vector<RenderCall> render_calls_opaque;
 		eRenderPriority current_priority = eRenderPriority::DISTANCE2CAMERA;
 		//SHADER
-		eShaders current_shader = eShaders::sDEFERRED;
+		eShaders current_shader = eShaders::sLIGHTS_MULTI;
 		//LIGHTS
 		std::vector<LightEntity*> lights;
 		std::vector<LightEntity*> visible_lights;
@@ -115,6 +122,10 @@ namespace SCN {
 		sIrradianceHeader irradiance_cache_info;
 		float irradiance_multiplier = 1.0f;
 		bool show_irradiance = false;
+
+		//reflection
+		GFX::FBO* reflections_fbo = nullptr;
+		std::vector<sReflectionProbe*> reflection_probes;
 
 
 		std::vector<Vector3f> random_points;
@@ -207,6 +218,9 @@ namespace SCN {
 		void uploadIrradianceCache();
 		void applyIrradiance();
 		void loadIrradianceCache();
+
+		void captureReflection(sReflectionProbe& probe);
+		void renderReflectionProbe(sReflectionProbe& probe);
 
 		void showUI();
 

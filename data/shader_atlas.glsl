@@ -5,6 +5,8 @@ skybox basic.vs skybox.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 
+reflectionProbe basic.vs reflectionProbe.fs
+
 texture_improved basic.vs texture_improved.fs
 lights_multi basic.vs lights_multi.fs
 light_pbr basic.vs light_pbr.fs
@@ -245,6 +247,8 @@ void main()
 	//calcule the position of the vertex using the matrices
 	gl_Position = u_viewprojection * vec4( v_world_position, 1.0 );
 }
+
+
 //MY UTILS
 
 \lights
@@ -471,6 +475,28 @@ vec3 ComputeSHIrradiance(in vec3 normal, in SH9Color sh)
 
 //MY SHADERS 
 
+\reflectionProbe.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_normal;
+in vec3 v_world_position;
+
+uniform samplerCube u_texture;
+uniform vec3 u_camera_position;
+out vec4 FragColor;
+
+void main()
+{
+	vec3 N = normalize( v_normal );
+	vec3 E = v_world_position - u_camera_position;
+	vec3 R = reflect( E, N);
+	vec4 color = texture( u_texture, R ) ;
+	FragColor = color;
+}
+
+
 \texture_improved.fs
 
 #version 330 core
@@ -554,15 +580,18 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform vec3 u_camera_position;
-//material properties
 
+//material properties
 uniform vec4 u_color;
 uniform sampler2D u_albedo_texture;
 uniform sampler2D u_emissive_texture;
 uniform sampler2D u_metallic_roughness_texture;
 uniform sampler2D u_normal_texture;
 uniform vec3 u_emissive_factor;
+uniform vec2 u_mat_properties;	// (metallic_factor, roughness_factor)
 
+uniform samplerCube u_environment;
+uniform bool u_enable_reflections;
 
 //global properties
 
@@ -587,6 +616,7 @@ void main()
 	float ks = texture(u_metallic_roughness_texture, v_uv).g;
 	float alpha = texture(u_metallic_roughness_texture, v_uv).b;
 
+
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
@@ -602,7 +632,9 @@ void main()
 	{
 		N = normalize(v_normal);
 	}
+
 	
+	vec3 R;	
 	vec3 V = normalize(u_camera_position - v_world_position);
 
 	float shadow_factor =  1.0;
@@ -619,7 +651,7 @@ void main()
 		//Specular light
 		if(u_light_info.a == 1 && alpha != 0.0)
 		{
-			vec3 R = normalize(-reflect(u_light_front, N));
+			R = normalize(-reflect(u_light_front, N));
 
 			light += compute_specular_phong(R, V, ks, alpha);
 		}
@@ -639,7 +671,7 @@ void main()
 		//Specular light
 		if(u_light_info.a == 1 && alpha != 0.0)
 		{
-			vec3 R = normalize(-reflect(L, N));
+			R = normalize(-reflect(L, N));
 			light += compute_specular_phong(R, V, ks, alpha);
 
 		}
@@ -680,6 +712,23 @@ void main()
 	emissive_light *= u_emissive_factor;
 	color += emissive_light;
 
+	
+	//environment reflections
+	if (u_enable_reflections)
+	{
+		vec3 E = normalize(v_world_position - u_camera_position);
+		R = (reflect(E, N));
+		vec3 reflected_color = texture(u_environment, R).xyz;
+		reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
+	
+		float fresnel = pow(1.0 - max(0.0, dot(-E,N)), 1/2.2);		//very ugly solution
+		float reflective_factor = fresnel * alpha * u_mat_properties.x;
+
+		color.xyz = mix( color.xyz, reflected_color, reflective_factor);
+	}
+		
+		
+	
 	FragColor = vec4(color, albedo.a);
 }
 
@@ -693,15 +742,18 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform vec3 u_camera_position;
-//material properties
 
+//material properties
 uniform vec4 u_color;
 uniform sampler2D u_albedo_texture;
 uniform sampler2D u_emissive_texture;
 uniform sampler2D u_metallic_roughness_texture;
 uniform sampler2D u_normal_texture;
 uniform vec3 u_emissive_factor;
+uniform vec2 u_mat_properties;	// (metallic_factor, roughness_factor)
 
+uniform samplerCube u_environment;
+uniform bool u_enable_reflections;
 
 //global properties
 
@@ -838,6 +890,26 @@ void main()
 	emissive_light = pow(emissive_light, vec3(2.2));
 	emissive_light *= u_emissive_factor;
 	color += emissive_light;
+
+	//environment reflections
+	if (u_enable_reflections)
+	{
+		vec3 E = normalize(v_world_position - u_camera_position);
+		vec3 R = (reflect(E, N));
+		vec3 reflected_color = texture(u_environment, R).xyz;
+		reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
+	
+
+		float EoN = max(dot(-E, N), 0.0);
+		vec3 fresnel = compute_Schlick( EoN, f0 ); //TODO realment no se si aixo te cap mena de sentit
+
+		vec3 reflective_factor = fresnel * metallic * u_mat_properties.x;
+
+		color.x = mix( color.x, reflected_color.x, reflective_factor.x);
+		color.y = mix( color.y, reflected_color.y, reflective_factor.y);
+		color.z = mix( color.z, reflected_color.z, reflective_factor.z);
+
+	}
 
 	FragColor = vec4(color, albedo.a);
 }

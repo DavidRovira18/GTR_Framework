@@ -79,7 +79,7 @@ namespace SCN {
 	//struct to store reflection probes info
 	struct sReflectionProbe {
 		vec3 pos;
-		GFX::Texture* cubemap = NULL;
+		GFX::Texture* cubemap = nullptr;
 	};
 
 

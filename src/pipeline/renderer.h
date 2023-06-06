@@ -128,6 +128,9 @@ namespace SCN {
 		std::vector<sReflectionProbe*> reflection_probes;
 
 
+		//planar reflection
+		GFX::FBO* planar_reflection_fbo = nullptr;
+
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;
 		bool show_ssao = false;
@@ -221,6 +224,8 @@ namespace SCN {
 
 		void captureReflection(sReflectionProbe& probe);
 		void renderReflectionProbe(sReflectionProbe& probe);
+
+		void renderPlanarReflection();
 
 		void showUI();
 

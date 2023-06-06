@@ -1,0 +1,31 @@
+{
+	"background_color":	[0.00999999977648258, 0.00999999977648258, 0.10000000149011612],
+	"ambient_light":	[0.18000000715255737, 0.15999999642372131, 0.20000000298023224],
+	"camera_position":	[-300, 90, -150],
+	"camera_target":	[0, 40, 0],
+	"camera_fov":	60,
+	"skybox":	"night.hdre",
+	"entities":	[{
+			"name":	"car1",
+			"layers":	3,
+			"position":	[-80, 0, -100],
+			"scale":	[1, 1, 1],
+			"rotation":	[0, 0.38268345594406128, 0, 0.92387950420379639],
+			"filename":	"prefabs/gmc/scene.gltf",
+			"type":	"PREFAB"
+		},{
+			"name":	"moonlight",
+			"layers":	3,
+			"position":	[150, 300, 50],
+			"scale":	[1, 1.0000001192092896, 1],
+			"rotation":	[-0.35411795973777771, 0.49672037363052368, 0.23217631876468658, 0.75760382413864136],
+			"color":	[0.10000000149011612, 0.20000000298023224, 0.40000000596046448],
+			"intensity":	1.5,
+			"max_dist":	1000,
+			"cast_shadows":	true,
+			"near_dist":	-500,
+			"area":	1000,
+			"light_type":	"DIRECTIONAL",
+			"type":	"LIGHT"
+		}]
+}

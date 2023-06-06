@@ -243,7 +243,9 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 		prioritySwitch();
 
-		renderReflectionProbe(probe);
+		//renderReflectionProbe(probe);
+
+		renderPlanarReflection();
 
 	illumination_fbo->unbind();
 	
@@ -1300,7 +1302,6 @@ void SCN::Renderer::captureReflection(sReflectionProbe& probe)
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	probe.cubemap->generateMipmaps();
 
-
 }
 
 void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
@@ -1318,6 +1319,32 @@ void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
 	shader->setUniform("u_model", model);
 	shader->setUniform("u_texture", texture , 0);
 	sphere.render(GL_TRIANGLES);
+}
+
+void SCN::Renderer::renderPlanarReflection()
+{
+	vec2 size = CORE::getWindowSize();
+
+	if (!planar_reflection_fbo)
+	{
+		planar_reflection_fbo = new GFX::FBO();
+		planar_reflection_fbo->create(size.x, size.y, 1, GL_RGB, GL_FLOAT);
+	}
+
+	Camera* camera = Camera::current;
+	Camera simetric_camera = *camera;
+
+	vec3 pos = camera->eye;
+	pos.y *= -1;
+
+	vec3 target = camera->center;
+	target.y *= -1;
+	simetric_camera.lookAt(pos, target, camera->up * -1.0f);
+	planar_reflection_fbo->bind();
+
+		prioritySwitch(eRenderMode::LIGHTS);
+
+	planar_reflection_fbo->unbind();
 }
 
 #ifndef SKIP_IMGUI

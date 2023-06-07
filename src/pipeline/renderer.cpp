@@ -43,6 +43,8 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	tonemapper_lumwhite = 1.0;
 	gamma = 2.2;
 
+	air_density = 0.001;
+
 	if (!GFX::Shader::LoadAtlas(shader_atlas_filename))
 		exit(1);
 	GFX::checkGLErrors();
@@ -283,7 +285,12 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			generateSSAO(camera);
 		ssao_fbo->unbind();
 
-		if (!show_ssao) {
+		volumetric_fbo->bind();
+			generateVolumetricAir(camera);
+		volumetric_fbo->unbind();
+
+
+		if (!show_ssao && !show_volumetric) {
 			//Compute illumination
 			illumination_fbo->bind();
 				computeIlluminationDeferred();
@@ -294,6 +301,12 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			else
 				renderGamma();
 		}
+
+		
+	}
+
+	if (show_volumetric) {
+		volumetric_fbo->color_textures[0]->toViewport();
 	}
 
 	if (show_ssao) {
@@ -750,9 +763,21 @@ void SCN::Renderer::renderDeferred()
 	{
 		renderDeferredLights(shader, camera);
 
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
 		//glDepthFunc(GL_LESS);
+
+		if (volumetric_fbo)
+		{
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			volumetric_fbo->color_textures[0]->toViewport();
+			glDisable(GL_BLEND);
+		}
+
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+
 
 		//Irradiance cache
 		if (show_probes)
@@ -904,6 +929,34 @@ void SCN::Renderer::initDeferredFBOs()
 		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
 
 	}
+
+	if (!volumetric_fbo || CORE::BaseApplication::instance->window_resized)
+	{
+		volumetric_fbo = new GFX::FBO();
+		volumetric_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
+
+	}
+}
+
+void SCN::Renderer::generateVolumetricAir(Camera* camera)
+{
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+
+	GFX::Shader* shader = GFX::Shader::Get("volumetric");
+	shader->enable();
+	shader->setTexture("u_depth_texture", gbuffers_fbo->depth_texture, 2);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / volumetric_fbo->color_textures[0]->width, 1.0 / volumetric_fbo->color_textures[0]->height));
+
+	shader->setUniform("u_camera_position", camera->eye);
+	shader->setUniform("u_air_density", air_density);
+
+	LightEntity* light = lights[0];
+	lightToShader(light, shader);
+
+	quad->render(GL_TRIANGLES);
 }
 
 void SCN::Renderer::generateSSAO(Camera* camera)
@@ -959,7 +1012,7 @@ void SCN::Renderer::lightToShader(LightEntity* light, GFX::Shader* shader)
 	if (light->light_type != eLightType::POINT)
 	{
 		shader->setUniform("u_light_front", light->root.model.rotateVector(vec3(0, 0, 1)));
-		if (light->light_type != eLightType::DIRECTIONAL)
+		if (light->light_type != eLightType::DIRECTIONAL)	
 			shader->setUniform("u_light_cone", vec2(cos(light->cone_info.x * DEG2RAD), cos(light->cone_info.y * DEG2RAD)));
 	}
 
@@ -1463,7 +1516,9 @@ void Renderer::showUI()
 
 				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
 
-				
+				ImGui::DragFloat("Air density", &air_density, 0.0, 50);  //TODO
+				ImGui::Checkbox("Show volumetric fbo", &show_volumetric);
+
 				ImGui::TreePop();
 			}
 

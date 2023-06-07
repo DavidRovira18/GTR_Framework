@@ -28,6 +28,9 @@ ssao quad.vs ssao.fs
 spherical_probe basic.vs spherical_probe.fs
 irradiance quad.vs irradiance.fs
 
+//Volumetric
+volumetric quad.vs volumetric.fs
+
 gamma quad.vs gamma.fs
 
 //TONEMAPPER
@@ -1825,6 +1828,90 @@ void main()
 
 	
 }
+
+\volumetric.fs
+
+#version 330 core
+
+in vec2 v_uv;
+
+uniform sampler2D u_depth_texture;
+
+uniform mat4 u_viewprojection;
+uniform mat4 u_ivp;
+uniform vec2 u_iRes;
+uniform vec3 u_camera_position;
+uniform float u_air_density;
+
+#define SAMPLES 64
+
+#include "lights"
+
+
+out vec4 FragColor;
+
+//random value from uv
+float rand(vec2 co)
+{
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+vec3 computeLight( vec3 pos )
+{
+	return vec3(0.0);
+}
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+	
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 ray_start = u_camera_position;
+	vec3 ray_dir = ( world_pos - ray_start );
+	float ray_length = length(ray_dir);
+	ray_dir /= ray_length;
+	ray_dir = normalize(ray_dir);
+	ray_length = min( 500.0, ray_length ); //max ray
+
+	float step_dist = ray_length / float(SAMPLES);
+	ray_start += ray_dir * rand(uv) * step_dist;
+
+	vec3 current_pos = ray_start;
+	vec3 ray_offset = ray_dir * step_dist;
+
+	vec3 color = vec3(0.0);
+	float transparency = 1.0;
+
+	float air_step = u_air_density * step_dist;
+
+	for(int i = 0; i < SAMPLES; ++i)
+	{
+		//evaluate contribution
+		vec3 light = computeLight( current_pos );
+
+		//accumulate the amount of light
+		light += light * transparency * air_step;		//he put irradiance somewhere
+
+		//advance to next position
+		current_pos.xyz += ray_offset;
+
+		//reduce visibility
+		transparency -= air_step;
+
+		//something missing I think
+	}
+
+
+	FragColor = vec4(color, transparency);
+
+	
+}
+
 
 
 \gamma.fs

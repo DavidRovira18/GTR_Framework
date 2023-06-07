@@ -147,6 +147,10 @@ namespace SCN {
 		float reflections_factor = 0.0f;
 		bool enable_fresnel = false;
 
+		//volumetric render
+		GFX::FBO* volumetric_fbo = nullptr;
+		bool show_volumetric = false;
+		float air_density;
 
 		//TONEMAPPER
 		bool enable_tonemapper;
@@ -208,6 +212,7 @@ namespace SCN {
 		void renderDeferredDirectionalLights(GFX::Shader* shader, Camera* camera);
 		void renderDeferredGeometryLights(GFX::Shader* shader, Camera* camera);
 		void initDeferredFBOs();
+		void generateVolumetricAir(Camera* camera);
 		void generateSSAO(Camera* camera);
 		void computeIlluminationDeferred();
 

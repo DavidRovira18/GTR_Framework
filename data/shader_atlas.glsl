@@ -491,8 +491,8 @@ void main()
 {
 	vec3 N = normalize( v_normal );
 	vec3 E = v_world_position - u_camera_position;
-	vec3 R = reflect( E, N);
-	vec4 color = texture( u_texture, R ) ;
+	vec3 R = reflect( E, N );
+	vec4 color = textureLod( u_texture, R, 0.0 ) ;
 	FragColor = color;
 }
 
@@ -721,13 +721,12 @@ void main()
 		vec3 reflected_color = texture(u_environment, R).xyz;
 		reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
 	
-		float fresnel = pow(1.0 - max(0.0, dot(-E,N)), 1/2.2);		//very ugly solution
+		float fresnel = 1.0 - max(dot(N,-E), 0.0);
+		fresnel = pow(fresnel, 2.0);
 		float reflective_factor = fresnel * alpha * u_mat_properties.x;
 
 		color.xyz = mix( color.xyz, reflected_color, reflective_factor);
 	}
-		
-		
 	
 	FragColor = vec4(color, albedo.a);
 }

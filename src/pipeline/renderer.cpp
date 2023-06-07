@@ -222,6 +222,18 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 		renderShadowmaps();
 }
 
+void SCN::Renderer::setupRenderFrame()
+{
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	GFX::checkGLErrors();
+
+	//render skybox
+	if (skybox_cubemap && current_shader != eShaders::sFLAT)
+		renderSkybox(skybox_cubemap, scene->skybox_intensity);
+}
+
 void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 {
 	//set the camera as default (used by some functions in the framework)
@@ -232,14 +244,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
 
-		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		GFX::checkGLErrors();
-
-		//render skybox
-		if(skybox_cubemap && current_shader != eShaders::sFLAT)
-			renderSkybox(skybox_cubemap, scene->skybox_intensity);
+		setupRenderFrame();
 
 		prioritySwitch();
 
@@ -855,6 +860,7 @@ void SCN::Renderer::renderDeferredGeometryLights(GFX::Shader* shader, Camera* ca
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 	glDisable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
 	for (auto light : lights)
 	{
 		if (light->light_type == eLightType::DIRECTIONAL)
@@ -871,7 +877,6 @@ void SCN::Renderer::renderDeferredGeometryLights(GFX::Shader* shader, Camera* ca
 
 		shader->setUniform("u_model", model);
 
-		glFrontFace(GL_CW);
 		sphere.render(GL_TRIANGLES);
 	}
 	glDepthFunc(GL_LESS);
@@ -926,11 +931,7 @@ void SCN::Renderer::computeIlluminationDeferred()
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	if (skybox_cubemap)
-		renderSkybox(skybox_cubemap, scene->skybox_intensity);
+	setupRenderFrame();
 
 	//render illumination
 	renderDeferred();
@@ -1073,14 +1074,8 @@ void SCN::Renderer::captureProbe(sProbe& probe)
 			glDisable(GL_BLEND);
 			glEnable(GL_DEPTH_TEST);
 
-			glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			setupRenderFrame();
 
-			GFX::checkGLErrors();
-
-			//render skybox
-			if (skybox_cubemap && current_shader != eShaders::sFLAT)
-				renderSkybox(skybox_cubemap, scene->skybox_intensity);
 			prioritySwitch(eRenderMode::LIGHTS);
 		irr_fbo->unbind();
 
@@ -1291,11 +1286,12 @@ void SCN::Renderer::captureReflection(sReflectionProbe& probe)
 
 		reflections_fbo->bind();
 
+			setupRenderFrame();
+
 			prioritySwitch(eRenderMode::LIGHTS);	//TODO: check mode
 
 		reflections_fbo->unbind();
 	}
-
 	//generate the mipmaps
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	probe.cubemap->generateMipmaps();
@@ -1305,7 +1301,6 @@ void SCN::Renderer::captureReflection(sReflectionProbe& probe)
 
 void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
 {
-
 	GFX::Texture* texture = probe.cubemap ? probe.cubemap : skybox_cubemap;
 	Camera* camera = Camera::current;
 	GFX::Shader* shader = GFX::Shader::Get("reflectionProbe");
@@ -1810,6 +1805,7 @@ void SCN::Renderer::renderTonemapper()
 	}
 
 	illumination_fbo->color_textures[0]->toViewport(shader);
+	//reflections_fbo->color_textures[0]->toViewport(shader);
 	shader->disable();
 }
 

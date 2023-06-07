@@ -2,346 +2,347 @@
   editor.cpp
   main.cpp
   renderer.cpp
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\editor.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\extra\cJSON.h(103,16): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\editor.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\main.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\extra\cJSON.h(103,16): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\main.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\application.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\extra\cJSON.h(103,16): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\application.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\extra\cJSON.h(103,16): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(44,10): warning C4305: '=': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(98,40): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\editor.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\editor.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\application.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\application.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(44,13): warning C4305: '=': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(98,40): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(98,32): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(98,32): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(110,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(135,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(154,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(173,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(379,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\application.cpp(85,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\application.cpp(86,20): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(520,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(116,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(133,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(140,18): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(110,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(135,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(154,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(173,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(386,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(527,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(581,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(618,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(632,25): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(143,36): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(574,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(144,61): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(144,34): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(609,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(201,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(623,25): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(638,65): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(629,65): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(638,30): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(629,30): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(641,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(632,63): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(665,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(714,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(760,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(782,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(247,66): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(656,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(705,10): warning C4244: 'inicializando': conversión de 'long' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(290,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(751,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(773,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(782,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(773,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(799,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(790,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(799,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(790,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(826,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(817,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(826,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(817,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(855,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(846,54): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(855,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(846,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(897,36): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(888,36): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(897,28): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(888,28): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(904,32): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(895,32): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(904,24): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(895,24): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(920,82): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(911,82): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(920,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(911,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(957,52): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(952,52): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(963,82): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(958,82): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(963,47): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(958,47): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(966,62): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(961,62): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1010,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1051,54): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1113,30): warning C4244: 'argumento': conversión de 'T' a 'const unsigned int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1005,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(305,39): warning C4244: '=': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1122,15): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(307,56): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(307,54): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1046,28): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(321,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(359,60): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(373,57): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1114,30): warning C4244: 'argumento': conversión de 'T' a 'const unsigned int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1125,23): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1123,15): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1125,20): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(409,34): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(409,27): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1125,17): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1126,23): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1131,44): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(409,19): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1131,41): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1126,20): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1131,38): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1126,17): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1138,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1149,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1182,49): warning C4244: 'inicializando': conversión de 'T' a 'unsigned int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(432,25): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1132,44): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1185,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1216,67): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1132,41): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1216,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1132,38): warning C4244: 'argumento': conversión de 'int' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1245,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1264,40): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1514,66): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1139,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1150,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1183,49): warning C4244: 'inicializando': conversión de 'T' a 'unsigned int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1514,47): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(525,22): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1186,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(546,83): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1217,67): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1514,29): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(551,61): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1217,40): warning C4244: 'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1516,84): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(571,10): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\editor.cpp(573,86): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1246,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1483,66): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1516,65): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1483,47): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1516,46): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1483,29): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1516,27): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1485,84): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1518,52): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1485,65): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1518,33): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1485,46): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1520,68): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1485,27): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1520,49): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1487,52): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1520,27): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1487,33): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1526,45): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1489,68): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1526,30): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1489,49): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1558,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1591,20): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1601,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1611,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1618,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1628,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1635,21): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1681,94): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1713,15): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1714,13): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1715,11): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1783,31): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1489,27): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1783,23): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1495,45): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(116,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(133,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(140,18): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1495,30): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\application.cpp(85,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(143,36): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(144,61): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(144,34): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\application.cpp(86,20): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(201,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(247,69): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(290,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(305,39): warning C4244: '=': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1527,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1560,20): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1570,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1580,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1587,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1597,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1604,21): warning C4018: '<': no coinciden signed/unsigned
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1650,70): warning C4305: 'argumento': truncamiento de 'double' a 'float'
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1682,15): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1683,13): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1684,11): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1752,31): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(307,56): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(307,54): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(321,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(359,84): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(373,74): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(409,34): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(409,27): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
-C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\src\pipeline\renderer.cpp(1752,23): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(409,19): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
           with
           [
               T=float
           ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(432,25): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(525,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(546,93): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(551,84): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(571,10): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(573,86): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
      Creando biblioteca ..\..\GTR.lib y objeto ..\..\GTR.exp
 LINK : warning LNK4098: la biblioteca predeterminada'LIBCMT' entra en conflicto con otras bibliotecas; use la biblioteca /NODEFAULTLIB:biblioteca
   Generando código
-  160 of 6080 functions ( 2.6%) were compiled, the rest were copied from previous compilation.
-    12 functions were new in current compilation
-    181 functions had inline decision re-evaluated but remain unchanged
+  555 of 6129 functions ( 9.1%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    235 functions had inline decision re-evaluated but remain unchanged
   Generación de código finalizada
-glew32s.lib(glew.obj) : warning LNK4099: no se encontró PDB '' con 'glew32s.lib(glew.obj)' o en ''; se vinculará el objeto sin tener en cuenta información de depuración
-  visualstudio.vcxproj -> C:\Users\Júlia Coll\OneDrive\Documentos\Uni\4t\GTR\GTR-David\GTR_Framework\GTR.exe
+glew32s.lib(glew.obj) : warning LNK4099: no se encontró PDB 'vc120.pdb' con 'glew32s.lib(glew.obj)' o en 'C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\vc120.pdb'; se vinculará el objeto sin tener en cuenta información de depuración
+  visualstudio.vcxproj -> C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\GTR.exe

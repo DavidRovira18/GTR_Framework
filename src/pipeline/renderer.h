@@ -176,6 +176,8 @@ namespace SCN {
 		//renders several elements of the scene
 		void renderScene(SCN::Scene* scene, Camera* camera);
 
+		void setupRenderFrame();
+
 		void renderFrameForward(SCN::Scene* scene, Camera* camera);
 		void renderFrameDeferred(SCN::Scene* scene, Camera* camera);
 

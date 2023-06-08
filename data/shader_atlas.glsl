@@ -1846,7 +1846,7 @@ uniform float u_air_density;
 #define SAMPLES 64
 
 #include "lights"
-
+#include "shadowmaps"
 
 out vec4 FragColor;
 
@@ -1858,7 +1858,41 @@ float rand(vec2 co)
 
 vec3 computeLight( vec3 pos )
 {
-	return vec3(0.0);
+	vec3 light = vec3(0.0);
+	
+	vec3 V = normalize(u_camera_position - pos);
+
+	float shadow_factor =  1.0;
+
+	if(u_shadow_params.x != 0 && u_light_info.x != NO_LIGHT)
+	{
+		shadow_factor = testShadow(pos);
+	}
+
+
+	if(u_light_info.x == SPOT_LIGHT)
+	{
+		light += u_light_color;
+		
+		vec3 L = u_light_pos - pos;
+		float dist = length(L);
+		L /= dist;
+
+		//LINEAR DISTANCE ATTENUATION
+		float attenuation = u_light_info.z - dist;
+		attenuation /= u_light_info.z;
+		attenuation = max(attenuation, 0.0);
+
+		float cos_angle = dot(u_light_front, L);
+		if(cos_angle < u_light_cone.y)
+			attenuation = 0.0;
+		else if(cos_angle < u_light_cone.x)
+		attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
+		
+		
+		light *= attenuation * shadow_factor;
+	}
+	return light;
 }
 
 void main()
@@ -1895,7 +1929,7 @@ void main()
 		vec3 light = computeLight( current_pos );
 
 		//accumulate the amount of light
-		light += light * transparency * air_step;		//he put irradiance somewhere
+		color += light * transparency * air_step;
 
 		//advance to next position
 		current_pos.xyz += ray_offset;
@@ -1903,13 +1937,12 @@ void main()
 		//reduce visibility
 		transparency -= air_step;
 
-		//something missing I think
+		//too dense, nothing can be seen behind
+		if(transparency < 0.001)
+			break;
 	}
 
-
 	FragColor = vec4(color, transparency);
-
-	
 }
 
 

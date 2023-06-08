@@ -933,7 +933,7 @@ void SCN::Renderer::initDeferredFBOs()
 	if (!volumetric_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		volumetric_fbo = new GFX::FBO();
-		volumetric_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
+		volumetric_fbo->create(size.x/2, size.y/2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
 
 	}
 }
@@ -942,7 +942,6 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 {
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-
 
 	GFX::Shader* shader = GFX::Shader::Get("volumetric");
 	shader->enable();
@@ -1516,7 +1515,7 @@ void Renderer::showUI()
 
 				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
 
-				ImGui::DragFloat("Air density", &air_density, 0.0, 50);  //TODO
+				ImGui::DragFloat("Air density", &air_density, 0.0001, 0.0, 0.1);  //TODO
 				ImGui::Checkbox("Show volumetric fbo", &show_volumetric);
 
 				ImGui::TreePop();

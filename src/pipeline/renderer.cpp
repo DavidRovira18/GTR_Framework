@@ -941,7 +941,8 @@ void SCN::Renderer::initDeferredFBOs()
 void SCN::Renderer::generateVolumetricAir(Camera* camera)
 {
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	GFX::Shader* shader = GFX::Shader::Get("volumetric");
 	shader->enable();
@@ -952,10 +953,15 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 	shader->setUniform("u_camera_position", camera->eye);
 	shader->setUniform("u_air_density", air_density);
 
-	LightEntity* light = lights[0];
-	lightToShader(light, shader);
+	for (auto light : lights)
+	{
+		if (light->light_type == POINT)
+			continue;
 
-	quad->render(GL_TRIANGLES);
+		lightToShader(light, shader);
+		quad->render(GL_TRIANGLES);
+	}
+	glDisable(GL_BLEND);
 }
 
 void SCN::Renderer::generateSSAO(Camera* camera)

@@ -1869,6 +1869,12 @@ vec3 computeLight( vec3 pos )
 		shadow_factor = testShadow(pos);
 	}
 
+	if(u_light_info.x == DIRECTIONAL_LIGHT)
+	{
+		light += u_light_color;
+		
+		light *= shadow_factor;
+	}
 
 	if(u_light_info.x == SPOT_LIGHT)
 	{

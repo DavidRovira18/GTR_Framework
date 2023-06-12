@@ -174,7 +174,7 @@ namespace SCN {
 
 		//just to be sure we have everything ready for the rendering
 		void setupScene(Camera* camera);
-		void processLightsDecals();
+		void processEntities();
 		void processRenderCalls(Camera* camera);
 
 		//add here your functions

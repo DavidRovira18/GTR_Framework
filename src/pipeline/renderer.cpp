@@ -80,7 +80,7 @@ void Renderer::setupScene(Camera* camera)
 	else
 		skybox_cubemap = nullptr;
 	
-	processLightsDecals();
+	processEntities();
 
 	processRenderCalls(camera);
 	
@@ -103,7 +103,7 @@ void Renderer::setupScene(Camera* camera)
 
 }
 
-void SCN::Renderer::processLightsDecals()
+void SCN::Renderer::processEntities()
 {
 	//lights
 	lights.clear();

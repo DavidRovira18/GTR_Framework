@@ -1,6 +1,15 @@
-﻿  renderer.cpp
-C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct'
-C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON'
+﻿  editor.cpp
+  application.cpp
+  main.cpp
+  renderer.cpp
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\main.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\editor.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\editor.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'class' ahora se ve usando 'struct' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\pipeline\renderer.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\scene.h(12,12): warning C4099: 'cJSON': nombre de tipo visto anteriormente usando 'struct' ahora se ve usando 'class' (compilando archivo de origen ..\..\src\application.cpp)
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\extra\cJSON.h(103): message : vea la declaración de 'cJSON' (compilando archivo de origen ..\..\src\application.cpp)
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(44,13): warning C4305: '=': truncamiento de 'double' a 'float'
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(46,21): warning C4305: '=': truncamiento de 'double' a 'float'
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(100,40): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
@@ -216,7 +225,19 @@ C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\
           ]
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1312,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1331,40): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(116,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(133,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(140,18): warning C4244: 'inicializando': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(143,36): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(144,61): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(144,34): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1533,67): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(201,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(248,69): warning C4305: 'argumento': truncamiento de 'double' a 'float'
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1583,66): warning C4244: 'argumento': conversión de 'T' a 'GLsizei'; posible pérdida de datos
           with
           [
@@ -242,11 +263,14 @@ C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\
           [
               T=float
           ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\application.cpp(85,14): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1585,46): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
               T=float
           ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\application.cpp(86,20): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(291,33): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
 C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\renderer.cpp(1585,27): warning C4244: 'argumento': conversión de 'T' a 'GLint'; posible pérdida de datos
           with
           [
@@ -308,12 +332,39 @@ C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\pipeline\
           [
               T=float
           ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(306,39): warning C4244: '=': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(308,56): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(308,54): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(322,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(360,84): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(374,74): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(423,34): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(423,27): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(423,19): warning C4244: 'argumento': conversión de 'T' a 'int'; posible pérdida de datos
+          with
+          [
+              T=float
+          ]
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(446,25): warning C4244: 'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(539,22): warning C4018: '<': no coinciden signed/unsigned
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(560,93): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(565,84): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(585,10): warning C4244: 'inicializando': conversión de 'float' a 'int'; posible pérdida de datos
+C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\src\editor.cpp(587,86): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
      Creando biblioteca ..\..\GTR.lib y objeto ..\..\GTR.exp
 LINK : warning LNK4098: la biblioteca predeterminada'LIBCMT' entra en conflicto con otras bibliotecas; use la biblioteca /NODEFAULTLIB:biblioteca
   Generando código
-  96 of 6183 functions ( 1.6%) were compiled, the rest were copied from previous compilation.
-    54 functions were new in current compilation
-    304 functions had inline decision re-evaluated but remain unchanged
+  57 of 6183 functions ( 0.9%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    75 functions had inline decision re-evaluated but remain unchanged
   Generación de código finalizada
 glew32s.lib(glew.obj) : warning LNK4099: no se encontró PDB 'vc120.pdb' con 'glew32s.lib(glew.obj)' o en 'C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\vc120.pdb'; se vinculará el objeto sin tener en cuenta información de depuración
   visualstudio.vcxproj -> C:\Users\david\OneDrive\Escritorio\UNI\2022-2023\GTR\GTR_Framework\GTR.exe

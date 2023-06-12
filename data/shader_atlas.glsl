@@ -1948,7 +1948,7 @@ void main()
 			break;
 	}
 
-	FragColor = vec4(color, transparency);
+	FragColor = vec4(color, 1.0 - clamp(transparency, 0.0, 1.0));
 }
 
 

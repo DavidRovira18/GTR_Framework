@@ -35,6 +35,7 @@ namespace SCN {
 		float near_distance;
 		float max_distance;
 		bool cast_shadows;
+		bool volumetric_fog;
 		float shadow_bias;
 		vec2 cone_info;
 		float area; //for direct;

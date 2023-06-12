@@ -12,6 +12,7 @@ SCN::LightEntity::LightEntity()
 	intensity = 1;
 	max_distance = 100;
 	cast_shadows = false;
+	volumetric_fog = false;
 	shadow_bias = 0.001;
 	near_distance = 0.1;
 	area = 1000;

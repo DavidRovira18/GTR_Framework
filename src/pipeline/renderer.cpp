@@ -80,7 +80,7 @@ void Renderer::setupScene(Camera* camera)
 	else
 		skybox_cubemap = nullptr;
 	
-	processLights();
+	processLightsDecals();
 
 	processRenderCalls(camera);
 	
@@ -103,7 +103,7 @@ void Renderer::setupScene(Camera* camera)
 
 }
 
-void SCN::Renderer::processLights()
+void SCN::Renderer::processLightsDecals()
 {
 	//lights
 	lights.clear();
@@ -115,13 +115,18 @@ void SCN::Renderer::processLights()
 		if (!ent->visible)
 			continue;
 
-		//is a prefab!
 		if (ent->getType() == eEntityType::LIGHT)
 		{
 			LightEntity* lent = (SCN::LightEntity*)ent;
 			lights.push_back(lent);
 		}
-	}
+
+		if (ent->getType() == eEntityType::DECAL)
+		{
+			DecalEntity* dent = (SCN::DecalEntity*)ent;
+			decals.push_back(dent);
+		}
+	} 
 }
 
 void SCN::Renderer::processRenderCalls(Camera* camera)
@@ -958,9 +963,13 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 		if (light->light_type == POINT)
 			continue;
 
+		if (!light->volumetric_fog)
+			continue;
 		lightToShader(light, shader);
 		quad->render(GL_TRIANGLES);
 	}
+
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 }
 

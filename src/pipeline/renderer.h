@@ -152,6 +152,9 @@ namespace SCN {
 		bool show_volumetric = false;
 		float air_density;
 
+		//DECALS
+		std::vector<DecalEntity*> decals;
+
 		//TONEMAPPER
 		bool enable_tonemapper;
 		int current_tonemapper;
@@ -171,7 +174,7 @@ namespace SCN {
 
 		//just to be sure we have everything ready for the rendering
 		void setupScene(Camera* camera);
-		void processLights();
+		void processLightsDecals();
 		void processRenderCalls(Camera* camera);
 
 		//add here your functions

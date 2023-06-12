@@ -22,7 +22,7 @@ Application::Application()
 	REGISTER_ENTITY_TYPE(SCN::PrefabEntity);
 	//add here your own entities
 	REGISTER_ENTITY_TYPE(SCN::LightEntity);
-	//...
+	REGISTER_ENTITY_TYPE(SCN::DecalEntity);
 
 	// Create camera
 	camera = new Camera();

@@ -255,7 +255,10 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 		prioritySwitch();
 
-		renderReflectionProbe(probe);
+		for (int i = 0; i < reflection_probes.size(); i++)
+		{
+			renderReflectionProbe(reflection_probes[i]);
+		}
 
 	illumination_fbo->unbind();
 	
@@ -945,6 +948,9 @@ void SCN::Renderer::initDeferredFBOs()
 
 void SCN::Renderer::generateVolumetricAir(Camera* camera)
 {
+	glClearColor(0.0, 0.0, 0.0, 0.0);						//TODO: check
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -965,6 +971,7 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 
 		if (!light->volumetric_fog)
 			continue;
+
 		lightToShader(light, shader);
 		quad->render(GL_TRIANGLES);
 	}
@@ -1330,38 +1337,71 @@ void SCN::Renderer::captureReflection(sReflectionProbe& probe)
 	Camera camera;
 	camera.setPerspective(90, 1, 0.1, 1000);
 
-	if (!probe.cubemap)
-	{
-		probe.cubemap = new GFX::Texture();
-		probe.cubemap->createCubemap(
-			256, 256, 	//size
-			nullptr, 	//data
-			GL_RGB, GL_FLOAT);	//mipmaps
-	}
 
-	//render the view from every side
-	for (int i = 0; i < 6; ++i)
-	{
-		//assign cubemap face to FBO
-		reflections_fbo->setTexture(probe.cubemap, i);
+	//define the corners of the axis aligned grid
+	//this can be done using the boundings of our scene
+	vec3 start_pos(-300, 5, -400);
+	vec3 end_pos(300, 150, 400);
 
-		vec3 eye = probe.pos;
-		vec3 center = probe.pos + cubemapFaceNormals[i][2];
-		vec3 up = cubemapFaceNormals[i][1];
-		camera.lookAt(eye, center, up);
-		camera.enable();
+	//define how many probes you want per dimension
+	vec3 dim(5, 3, 5);
 
-		reflections_fbo->bind();
+	//compute the vector from one corner to the other
+	vec3 delta = (end_pos - start_pos);
 
-			setupRenderFrame();
+	//and scale it down according to the subdivisions
+	//we substract one to be sure the last probe is at end pos
+	delta.x /= (dim.x - 1);
+	delta.y /= (dim.y - 1);
+	delta.z /= (dim.z - 1);
 
-			prioritySwitch(eRenderMode::LIGHTS);	//TODO: check mode
+	reflection_probes.resize(dim.x * dim.y * dim.z);
 
-		reflections_fbo->unbind();
-	}
-	//generate the mipmaps
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	probe.cubemap->generateMipmaps();
+	//now delta give us the distance between probes in every axis
+	//lets compute the centers
+	//pay attention at the order at which we add them
+	for (int z = 0; z < dim.z; ++z)
+		for (int y = 0; y < dim.y; ++y)
+			for (int x = 0; x < dim.x; ++x)
+			{
+				sReflectionProbe p;
+				p.cubemap = new GFX::Texture();
+				p.cubemap->createCubemap(
+					256, 256, 	//size
+					nullptr, 	//data
+					GL_RGB, GL_FLOAT);	//mipmaps
+				
+				p.pos = start_pos + delta * vec3(x, y, z);
+
+				//render the view from every side
+				for (int i = 0; i < 6; ++i)
+				{
+					//assign cubemap face to FBO
+					reflections_fbo->setTexture(p.cubemap, i);
+
+					vec3 eye = p.pos;
+					vec3 center = p.pos + cubemapFaceNormals[i][2];
+					vec3 up = cubemapFaceNormals[i][1];
+					camera.lookAt(eye, center, up);
+					camera.enable();
+
+					reflections_fbo->bind();
+
+					setupRenderFrame();
+
+					prioritySwitch(eRenderMode::LIGHTS);	//TODO: check mode
+
+					reflections_fbo->unbind();
+				}
+				//generate the mipmaps
+				glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+				p.cubemap->generateMipmaps();
+				reflection_probes.push_back(p);
+
+			}
+	
+
+	
 
 
 }

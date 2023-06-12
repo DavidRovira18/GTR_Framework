@@ -125,7 +125,7 @@ namespace SCN {
 
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;
-		std::vector<sReflectionProbe*> reflection_probes;
+		std::vector<sReflectionProbe> reflection_probes;
 
 
 		std::vector<Vector3f> random_points;

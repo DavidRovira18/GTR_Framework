@@ -1003,11 +1003,11 @@ void SCN::Renderer::computeIlluminationDeferred()
 	//render illumination
 	renderDeferred();
 
-	if (!enable_dithering)
+	/*if (!enable_dithering)
 	{
 		current_lights_render = eLightsRender::MULTIPASS_TRANSPARENCIES;
 		renderTransparenciesForward();
-	}
+	}*/
 }
 
 void SCN::Renderer::cameraToShader(Camera* camera, GFX::Shader* shader)

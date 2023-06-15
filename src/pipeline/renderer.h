@@ -107,6 +107,7 @@ namespace SCN {
 
 		//DEFERRED FBOs
 		GFX::FBO* gbuffers_fbo = nullptr;
+		GFX::Texture* depth_buffer_clone = nullptr;
 		GFX::FBO* illumination_fbo = nullptr;
 
 		//SSAO
@@ -215,6 +216,7 @@ namespace SCN {
 		void renderDeferredDirectionalLights(GFX::Shader* shader, Camera* camera);
 		void renderDeferredGeometryLights(GFX::Shader* shader, Camera* camera);
 		void initDeferredFBOs();
+		void createDecals(Camera* camera);
 		void generateVolumetricAir(Camera* camera);
 		void generateSSAO(Camera* camera);
 		void computeIlluminationDeferred();

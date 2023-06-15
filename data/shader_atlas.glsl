@@ -31,6 +31,9 @@ irradiance quad.vs irradiance.fs
 //Volumetric
 volumetric quad.vs volumetric.fs
 
+//Decals
+decal basic.vs decal.fs
+
 gamma quad.vs gamma.fs
 
 //TONEMAPPER
@@ -1898,6 +1901,8 @@ vec3 computeLight( vec3 pos )
 		
 		light *= attenuation * shadow_factor;
 	}
+
+	light += u_ambient_light;
 	return light;
 }
 
@@ -1951,7 +1956,39 @@ void main()
 	FragColor = vec4(color, 1.0 - clamp(transparency, 0.0, 1.0));
 }
 
+\decal.fs
+#version 330 core
 
+uniform sampler2D u_depth_texture;
+uniform sampler2D u_color_texture;
+
+uniform mat4 u_ivp;
+uniform mat4 u_imodel;
+uniform vec2 u_iRes;
+
+out vec4 FragColor;
+void main()
+{
+	//vec2 uv = v_uv;
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	vec3 decal_space = (u_imodel * vec4(world_pos, 1.0)).xyz;
+	decal_space = decal_space + vec3(0.5);
+
+	vec4 color = texture(u_color_texture, decal_space.xy);
+
+	FragColor = color;
+}
 
 \gamma.fs
 #version 330 core

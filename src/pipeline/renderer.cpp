@@ -23,6 +23,7 @@ using namespace SCN;
 //some globals
 GFX::Mesh sphere;
 GFX::Mesh* quad;
+GFX::Mesh box;
 constexpr auto MAX_LIGHTS = 12;
 
 //create the probe
@@ -51,6 +52,9 @@ Renderer::Renderer(const char* shader_atlas_filename)
 
 	sphere.createSphere(1.0f);
 	sphere.uploadToVRAM();
+
+	box.createCube(1.0f);
+	box.uploadToVRAM();
 
 	quad = GFX::Mesh::getQuad();
 
@@ -108,6 +112,7 @@ void SCN::Renderer::processEntities()
 	//lights
 	lights.clear();
 	visible_lights.clear();
+	decals.clear();
 
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
@@ -283,6 +288,16 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		//gbuffers_fbo->enableAllBuffers();
 		prioritySwitch();
 	gbuffers_fbo->unbind();
+	
+	if (decals.size())
+	{
+		gbuffers_fbo->depth_texture->copyTo(depth_buffer_clone);
+
+		gbuffers_fbo->bind();
+			camera->enable();
+			createDecals(camera);
+		gbuffers_fbo->unbind();
+	}
 
 	if (show_buffers)
 		showGBuffers(size, camera);
@@ -297,18 +312,19 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 			generateVolumetricAir(camera);
 		volumetric_fbo->unbind();
 
-
 		if (!show_ssao && !show_volumetric) {
 			//Compute illumination
 			illumination_fbo->bind();
 				computeIlluminationDeferred();
 			illumination_fbo->unbind();
 
+
 			if (enable_tonemapper)
 				renderTonemapper();
 			else
 				renderGamma();
 		}
+
 
 		
 	}
@@ -779,7 +795,7 @@ void SCN::Renderer::renderDeferred()
 			glEnable(GL_BLEND);
 
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			volumetric_fbo->color_textures[0]->toViewport();
+				volumetric_fbo->color_textures[0]->toViewport();
 			glDisable(GL_BLEND);
 		}
 
@@ -931,6 +947,12 @@ void SCN::Renderer::initDeferredFBOs()
 		CORE::BaseApplication::instance->window_resized = false;
 	}
 
+	if (!depth_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
+	{
+		depth_buffer_clone = new GFX::Texture(size.x, size.y, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
 	if (!ssao_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		ssao_fbo = new GFX::FBO();
@@ -946,10 +968,45 @@ void SCN::Renderer::initDeferredFBOs()
 	}
 }
 
+void SCN::Renderer::createDecals(Camera* camera)
+{
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(false);
+	glDepthFunc(GL_GREATER);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
+
+	GFX::Texture* texture;
+	GFX::Shader* shader = GFX::Shader::Get("decal");
+	shader->enable();
+	cameraToShader(camera, shader);
+	shader->setTexture("u_depth_texture", depth_buffer_clone, 4);
+	shader->setUniform("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / gbuffers_fbo->color_textures[0]->width, 1.0 / gbuffers_fbo->color_textures[1]->height));
+
+	for (auto decal : decals)
+	{
+		texture = decal->filename.size() == 0 ? GFX::Texture::getWhiteTexture() : GFX::Texture::Get((std::string("data/") + decal->filename).c_str());
+		shader->setUniform("u_model", decal->root.model);
+		Matrix44 imodel = decal->root.model;
+		imodel.inverse();
+		shader->setUniform("u_imodel", imodel);
+		shader->setTexture("u_color_texture", texture, 1);
+		box.render(GL_TRIANGLES);
+	}
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(true);
+	glDisable(GL_BLEND);
+	glFrontFace(GL_CCW);
+	glDepthFunc(GL_LESS);
+}
+
 void SCN::Renderer::generateVolumetricAir(Camera* camera)
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);						//TODO: check
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -963,6 +1020,7 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 
 	shader->setUniform("u_camera_position", camera->eye);
 	shader->setUniform("u_air_density", air_density);
+	shader->setUniform("u_ambient_light", scene->ambient_light);
 
 	for (auto light : lights)
 	{

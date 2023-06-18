@@ -27,7 +27,7 @@ GFX::Mesh box;
 constexpr auto MAX_LIGHTS = 12;
 
 //create the probe
-sReflectionProbe probe;
+//sReflectionProbe probe;
 
 Renderer::Renderer(const char* shader_atlas_filename)
 {
@@ -74,7 +74,7 @@ Renderer::Renderer(const char* shader_atlas_filename)
 
 	//	//add it to the list
 	//reflection_probes.push_back(probe);
-	probe.pos.set(50,50,50);
+	//probe.pos.set(50,50,50);
 }
 
 void Renderer::setupScene(Camera* camera)
@@ -97,6 +97,12 @@ void Renderer::setupScene(Camera* camera)
 		capture_irradiance = false;
 	}
 	vec2 size = CORE::getWindowSize();
+
+	if (capture_reflectance)
+	{
+		captureReflection();
+		capture_reflectance = false;
+	}
 
 	if (!illumination_fbo || CORE::BaseApplication::instance->window_resized)
 	{
@@ -260,10 +266,15 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 		prioritySwitch();
 
-		for (int i = 0; i < reflection_probes.size(); i++)
+		if (show_reflection_probes)
 		{
-			renderReflectionProbe(reflection_probes[i]);
+			for (int i = 0; i < reflection_probes.size(); i++)
+			{
+				renderReflectionProbe(reflection_probes[i]);
+			}
 		}
+		
+
 
 	illumination_fbo->unbind();
 	
@@ -624,8 +635,13 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 
 		lightToShader(light, shader);
 
-		shader->setTexture("u_environment", skybox_cubemap, 9);
-		shader->setUniform("u_enable_reflections", enable_reflections);
+		sReflectionProbe* enviorment = getClosestReflectionProbe(rc->model);
+
+		if(!capture_reflectance)
+			shader->setTexture("u_environment", (enviorment) ? enviorment->cubemap : skybox_cubemap, 9);
+		
+		
+		shader->setUniform("u_enable_reflections", capture_reflectance ? false : enable_reflections);
 		//do the draw call that renders the mesh into the screen
 		rc->mesh->render(GL_TRIANGLES);
 
@@ -807,7 +823,7 @@ void SCN::Renderer::renderDeferred()
 		if (show_probes)
 		{
 			for (int i = 0; i < probes.size(); ++i)
-				renderProbe(probes[i]);
+				renderIrradianceProbe(probes[i]);
 		}
 	}
 }
@@ -1156,7 +1172,7 @@ void Renderer::renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc
 	}
 }
 
-void SCN::Renderer::renderProbe(sProbe& probe)
+void SCN::Renderer::renderIrradianceProbe(sProbe& probe)
 {
 	Camera* camera = Camera::current;
 	GFX::Shader* shader = GFX::Shader::Get("spherical_probe");
@@ -1173,7 +1189,7 @@ void SCN::Renderer::renderProbe(sProbe& probe)
 	sphere.render(GL_TRIANGLES);
 }
 
-void SCN::Renderer::captureProbe(sProbe& probe)
+void SCN::Renderer::captureIrradianceProbe(sProbe& probe)
 {
 	FloatImage images[6]; //here we will store the six views
 
@@ -1271,7 +1287,7 @@ void SCN::Renderer::captureIrradiance()
 	{
 		int probe_index = iP;
 		sProbe& p = probes[iP];
-		captureProbe(p);
+		captureIrradianceProbe(p);
 	}
 	show_probes = last_state;
 
@@ -1387,7 +1403,7 @@ void SCN::Renderer::loadIrradianceCache()
 	uploadIrradianceCache();
 }
 
-void SCN::Renderer::captureReflection(sReflectionProbe& probe)
+void SCN::Renderer::captureReflection()
 {
 	if (!reflections_fbo)
 		reflections_fbo = new GFX::FBO();
@@ -1398,11 +1414,11 @@ void SCN::Renderer::captureReflection(sReflectionProbe& probe)
 
 	//define the corners of the axis aligned grid
 	//this can be done using the boundings of our scene
-	vec3 start_pos(-300, 5, -400);
+	vec3 start_pos(-300, 50, -400);
 	vec3 end_pos(300, 150, 400);
 
 	//define how many probes you want per dimension
-	vec3 dim(5, 3, 5);
+	vec3 dim(3, 2, 4);
 
 	//compute the vector from one corner to the other
 	vec3 delta = (end_pos - start_pos);
@@ -1478,6 +1494,24 @@ void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
 	shader->setUniform("u_model", model);
 	shader->setUniform("u_texture", texture , 0);
 	sphere.render(GL_TRIANGLES);
+}
+
+sReflectionProbe* SCN::Renderer::getClosestReflectionProbe(Matrix44 model)
+{
+	int closest_index = -1; 
+	float min_dist = INFINITY;
+	for (int i = 0; i < reflection_probes.size(); i++)
+	{
+		vec3 aux = reflection_probes[i].pos - model.getTranslation();
+		float length = aux.length();
+
+		closest_index = (length < min_dist) ? i : closest_index;
+	}	
+	if (closest_index != -1)
+		return &reflection_probes[closest_index];
+	
+	else
+		return nullptr;
 }
 
 #ifndef SKIP_IMGUI
@@ -1584,9 +1618,12 @@ void Renderer::showUI()
 				if (ImGui::TreeNode("Reflections"))
 				{
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
+					ImGui::Checkbox("Show reflection cache", &show_reflection_probes);
 
 					if (ImGui::Button("Update Reflections"))
-						captureReflection(probe);	//TODO put it right
+						capture_reflectance = true;
+
+					//captureReflection();	//TODO put it right
 
 					ImGui::TreePop();
 				}
@@ -1707,7 +1744,7 @@ void Renderer::storeDrawCall(SCN::Node* node, Camera* camera)
 		BoundingBox world_bounding = transformBoundingBox(node_model, node->mesh->box);
 
 		//if bounding box is inside the camera frustum then the object is probably visible
-		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize))
+		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) || capture_reflectance)
 		{
 			Vector3f nodepos = node_model.getTranslation();
 			RenderCall rc;
@@ -1741,7 +1778,7 @@ void Renderer::storeDrawCallNoPriority(SCN::Node* node, Camera* camera)
 		BoundingBox world_bounding = transformBoundingBox(node_model, node->mesh->box);
 
 		//if bounding box is inside the camera frustum then the object is probably visible
-		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize))
+		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) || capture_reflectance)
 		{
 			Vector3f nodepos = node_model.getTranslation();
 			RenderCall rc;

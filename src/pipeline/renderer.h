@@ -127,7 +127,8 @@ namespace SCN {
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;
 		std::vector<sReflectionProbe> reflection_probes;
-
+		bool show_reflection_probes = false;
+		bool capture_reflectance = false;
 
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;
@@ -224,15 +225,18 @@ namespace SCN {
 		void renderTransparenciesForward();
 		void renderMultipassTransparencies(GFX::Shader* shader, RenderCall* rc);
 
-		void renderProbe(sProbe& probe);
-		void captureProbe(sProbe& probe);
+		// irradiance
+		void renderIrradianceProbe(sProbe& probe);
+		void captureIrradianceProbe(sProbe& probe);
 		void captureIrradiance();
 		void uploadIrradianceCache();
 		void applyIrradiance();
 		void loadIrradianceCache();
 
-		void captureReflection(sReflectionProbe& probe);
+		//reflections
+		void captureReflection();
 		void renderReflectionProbe(sReflectionProbe& probe);
+		sReflectionProbe* getClosestReflectionProbe(Matrix44 model);
 
 		void showUI();
 

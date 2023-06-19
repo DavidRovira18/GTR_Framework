@@ -5,8 +5,8 @@ skybox basic.vs skybox.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 
-reflectionProbe basic.vs reflectionProbe.fs
 
+//forward
 texture_improved basic.vs texture_improved.fs
 lights_multi basic.vs lights_multi.fs
 light_pbr basic.vs light_pbr.fs
@@ -27,6 +27,10 @@ ssao quad.vs ssao.fs
 //IRRADIANCE
 spherical_probe basic.vs spherical_probe.fs
 irradiance quad.vs irradiance.fs
+
+//REFLECTIONS
+reflectionProbe basic.vs reflectionProbe.fs
+mirror basic.vs mirror.fs
 
 //Volumetric
 volumetric quad.vs volumetric.fs
@@ -480,28 +484,6 @@ vec3 ComputeSHIrradiance(in vec3 normal, in SH9Color sh)
 }
 
 //MY SHADERS 
-
-\reflectionProbe.fs
-
-#version 330 core
-
-in vec3 v_position;
-in vec3 v_normal;
-in vec3 v_world_position;
-
-uniform samplerCube u_texture;
-uniform vec3 u_camera_position;
-out vec4 FragColor;
-
-void main()
-{
-	vec3 N = normalize( v_normal );
-	vec3 E = v_world_position - u_camera_position;
-	vec3 R = reflect( E, N );
-	vec4 color = textureLod( u_texture, R, 0.0 ) ;
-	FragColor = color;
-}
-
 
 \texture_improved.fs
 
@@ -2176,4 +2158,55 @@ void main()
 	irradiance *= albedo.xyz;
 
 	FragColor = vec4(irradiance, 1.0);
+}
+
+
+\reflectionProbe.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_normal;
+in vec3 v_world_position;
+
+uniform samplerCube u_texture;
+uniform vec3 u_camera_position;
+out vec4 FragColor;
+
+void main()
+{
+	vec3 N = normalize( v_normal );
+	vec3 E = v_world_position - u_camera_position;
+	vec3 R = reflect( E, N );
+	vec4 color = textureLod( u_texture, R, 0.0 ) ;
+	FragColor = color;
+}
+
+
+\mirror.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_normal;
+in vec3 v_world_position;
+
+uniform sampler2D u_texture;
+uniform vec3 u_camera_position;
+uniform vec2 u_iRes;
+
+out vec4 FragColor;
+
+
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes;
+	uv.x = 1.0 - uv.x;
+
+	vec3 N = normalize( v_normal );
+	vec3 E = v_world_position - u_camera_position;
+	vec3 R = reflect( E, N );
+	vec4 color = texture2D( u_texture, uv ) ;
+	FragColor = color;
 }

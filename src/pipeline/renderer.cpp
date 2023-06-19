@@ -22,6 +22,7 @@ using namespace SCN;
 
 //some globals
 GFX::Mesh sphere;
+GFX::Mesh plane;
 GFX::Mesh* quad;
 GFX::Mesh box;
 constexpr auto MAX_LIGHTS = 12;
@@ -52,6 +53,9 @@ Renderer::Renderer(const char* shader_atlas_filename)
 
 	sphere.createSphere(1.0f);
 	sphere.uploadToVRAM();
+
+	plane.createPlane(100.0);
+	plane.uploadToVRAM();
 
 	box.createCube(1.0f);
 	box.uploadToVRAM();
@@ -254,6 +258,40 @@ void SCN::Renderer::setupRenderFrame()
 
 void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 {
+	static Camera simetric_camera;
+	vec2 size = CORE::getWindowSize();
+
+	//render planer reflection
+	if (!planer_reflection_fbo)		//TODO: put it somewhere else ?
+	{
+		planer_reflection_fbo = new GFX::FBO();
+		planer_reflection_fbo->create(size.x, size.y, 1, GL_RGBA, GL_FLOAT);
+	}
+
+	simetric_camera = *camera;
+	vec3 pos = camera->eye;
+	pos.y *= -1;
+	vec3 target = camera->center;
+	target.y *= -1;
+	simetric_camera.lookAt(pos, target, camera->up * -1.0f);
+
+	simetric_camera.enable();
+
+	planer_reflection_fbo->bind();
+
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		
+		// TODO: add the sky?
+
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		prioritySwitch();
+
+	planer_reflection_fbo->unbind();
+
+	
 	//set the camera as default (used by some functions in the framework)
 	camera->enable();
 
@@ -274,7 +312,23 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 			}
 		}
 		
+		//planer reflection
+		if (show_planer_reflection)
+		{
 
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+			GFX::Texture* reflection = planer_reflection_fbo->color_textures[0];
+
+			GFX::Shader* shader = GFX::Shader::Get("mirror");
+			shader->enable();
+			cameraToShader(camera, shader);
+			Matrix44 model;
+			shader->setUniform("u_model", model);
+			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+			shader->setUniform("u_texture", reflection, 0);
+			plane.render(GL_TRIANGLES);
+		}
 
 	illumination_fbo->unbind();
 	
@@ -282,6 +336,9 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		renderTonemapper();
 	else
 		renderGamma();
+
+
+	
 }
 
 void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
@@ -960,7 +1017,7 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		gbuffers_fbo = new GFX::FBO();
 		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
-		CORE::BaseApplication::instance->window_resized = false;
+		CORE::BaseApplication::instance->window_resized = false;	//TODO: check that if it is set to false the other fbos won't be recomputed, no?
 	}
 
 	if (!depth_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
@@ -973,6 +1030,7 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		ssao_fbo = new GFX::FBO();
 		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
+		CORE::BaseApplication::instance->window_resized = false;
 
 	}
 
@@ -980,6 +1038,7 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		volumetric_fbo = new GFX::FBO();
 		volumetric_fbo->create(size.x/2, size.y/2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
+		CORE::BaseApplication::instance->window_resized = false;
 
 	}
 }
@@ -1618,7 +1677,8 @@ void Renderer::showUI()
 				if (ImGui::TreeNode("Reflections"))
 				{
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
-					ImGui::Checkbox("Show reflection cache", &show_reflection_probes);
+					ImGui::Checkbox("Show reflection cache", &show_reflection_probes); 
+					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection);
 
 					if (ImGui::Button("Update Reflections"))
 						capture_reflectance = true;

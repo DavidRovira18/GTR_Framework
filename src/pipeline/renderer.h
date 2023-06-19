@@ -126,9 +126,11 @@ namespace SCN {
 
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;
+		GFX::FBO* planer_reflection_fbo = nullptr;
 		std::vector<sReflectionProbe> reflection_probes;
 		bool show_reflection_probes = false;
 		bool capture_reflectance = false;
+		bool show_planer_reflection = false;
 
 		std::vector<Vector3f> random_points;
 		float ssao_radius = 5.0f;

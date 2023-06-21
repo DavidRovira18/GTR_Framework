@@ -239,6 +239,8 @@ namespace SCN {
 		void captureReflection();
 		void renderReflectionProbe(sReflectionProbe& probe);
 		sReflectionProbe* getClosestReflectionProbe(Matrix44 model);
+		void capturePlanerReflection();
+		void renderPlanerReflectionFBO(Camera* camera);
 
 		void showUI();
 

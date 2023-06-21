@@ -277,19 +277,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 	simetric_camera.enable();
 
-	planer_reflection_fbo->bind();
-
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
-		
-		// TODO: add the sky?
-
-		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		prioritySwitch();
-
-	planer_reflection_fbo->unbind();
+	capturePlanerReflection();
 
 	
 	//set the camera as default (used by some functions in the framework)
@@ -315,19 +303,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		//planer reflection
 		if (show_planer_reflection)
 		{
-
-			glDisable(GL_BLEND);
-			glEnable(GL_DEPTH_TEST);
-			GFX::Texture* reflection = planer_reflection_fbo->color_textures[0];
-
-			GFX::Shader* shader = GFX::Shader::Get("mirror");
-			shader->enable();
-			cameraToShader(camera, shader);
-			Matrix44 model;
-			shader->setUniform("u_model", model);
-			shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
-			shader->setUniform("u_texture", reflection, 0);
-			plane.render(GL_TRIANGLES);
+			renderPlanerReflectionFBO(camera);
 		}
 
 	illumination_fbo->unbind();
@@ -1571,6 +1547,46 @@ sReflectionProbe* SCN::Renderer::getClosestReflectionProbe(Matrix44 model)
 	
 	else
 		return nullptr;
+}
+
+void SCN::Renderer::capturePlanerReflection()
+{
+	planer_reflection_fbo->bind();
+
+	
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+
+	/*
+	// TODO: add the sky?
+
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	*/
+
+	setupRenderFrame();
+
+	prioritySwitch();
+
+	planer_reflection_fbo->unbind();
+}
+
+void SCN::Renderer::renderPlanerReflectionFBO(Camera* camera)
+{
+	vec2 size = CORE::getWindowSize();
+
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	GFX::Texture* reflection = planer_reflection_fbo->color_textures[0];
+
+	GFX::Shader* shader = GFX::Shader::Get("mirror");
+	shader->enable();
+	cameraToShader(camera, shader);
+	Matrix44 model;
+	shader->setUniform("u_model", model);
+	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
+	shader->setUniform("u_texture", reflection, 0);
+	plane.render(GL_TRIANGLES);
 }
 
 #ifndef SKIP_IMGUI

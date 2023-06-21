@@ -113,6 +113,11 @@ namespace SCN {
 		//SSAO
 		GFX::FBO* ssao_fbo = nullptr;
 		GFX::Texture* ssao_blur = nullptr;
+		std::vector<Vector3f> random_points;
+		float ssao_radius = 5.0f;
+		bool show_ssao = false;
+		bool add_SSAO = true;
+		float control_SSAO_factor = 3.0f;
 
 		//iradiance
 		GFX::FBO* irr_fbo = nullptr;
@@ -131,13 +136,9 @@ namespace SCN {
 		bool show_reflection_probes = false;
 		bool capture_reflectance = false;
 		bool show_planer_reflection = false;
+		GFX::FBO* deferred_reflections_fbo = nullptr;
 
-		std::vector<Vector3f> random_points;
-		float ssao_radius = 5.0f;
-		bool show_ssao = false;
-		bool add_SSAO = true;
-		float control_SSAO_factor = 3.0f;
-
+		
 		bool show_buffers = false;
 		bool show_globalpos = false;
 		bool enable_dithering = true;
@@ -241,6 +242,8 @@ namespace SCN {
 		sReflectionProbe* getClosestReflectionProbe(Matrix44 model);
 		void capturePlanerReflection();
 		void renderPlanerReflectionFBO(Camera* camera);
+		void generateReflectionDeferred(Camera* camera);
+
 
 		void showUI();
 

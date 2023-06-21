@@ -277,7 +277,8 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 	simetric_camera.enable();
 
-	capturePlanerReflection();
+	if (show_planer_reflection)
+		capturePlanerReflection();
 
 	
 	//set the camera as default (used by some functions in the framework)
@@ -302,9 +303,8 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		
 		//planer reflection
 		if (show_planer_reflection)
-		{
 			renderPlanerReflectionFBO(camera);
-		}
+		
 
 	illumination_fbo->unbind();
 	
@@ -348,13 +348,23 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	else
 	{
 		//ssao
-		ssao_fbo->bind();
-			generateSSAO(camera);
-		ssao_fbo->unbind();
-
+		if (add_SSAO || show_ssao)
+		{
+			ssao_fbo->bind();
+				generateSSAO(camera);
+			ssao_fbo->unbind();
+		}
+		
+		//volumetric
 		volumetric_fbo->bind();
 			generateVolumetricAir(camera);
 		volumetric_fbo->unbind();
+
+		//reflections
+		deferred_reflections_fbo->bind();
+			generateReflectionDeferred(camera);
+		deferred_reflections_fbo->unbind();
+
 
 		if (!show_ssao && !show_volumetric) {
 			//Compute illumination
@@ -381,6 +391,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		ssao_fbo->color_textures[0]->toViewport();
 	}
 	
+	//deferred_reflections_fbo->color_textures[0]->toViewport();
 }
 
 void Renderer::renderSkybox(GFX::Texture* cubemap, float intensity)
@@ -1017,6 +1028,14 @@ void SCN::Renderer::initDeferredFBOs()
 		CORE::BaseApplication::instance->window_resized = false;
 
 	}
+
+	if (!deferred_reflections_fbo || CORE::BaseApplication::instance->window_resized)
+	{
+		deferred_reflections_fbo = new GFX::FBO();
+		deferred_reflections_fbo->create(size.x / 2, size.y / 2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);		//TODO: check parameters
+		CORE::BaseApplication::instance->window_resized = false;
+
+	}
 }
 
 void SCN::Renderer::createDecals(Camera* camera)
@@ -1056,7 +1075,7 @@ void SCN::Renderer::createDecals(Camera* camera)
 
 void SCN::Renderer::generateVolumetricAir(Camera* camera)
 {
-	glClearColor(0.0, 0.0, 0.0, 0.0);						//TODO: check
+	glClearColor(0.0, 0.0, 0.0, 0.0);	//TODO: check
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glDisable(GL_DEPTH_TEST);
@@ -1557,13 +1576,6 @@ void SCN::Renderer::capturePlanerReflection()
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 
-	/*
-	// TODO: add the sky?
-
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	*/
-
 	setupRenderFrame();
 
 	prioritySwitch();
@@ -1587,6 +1599,24 @@ void SCN::Renderer::renderPlanerReflectionFBO(Camera* camera)
 	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 	shader->setUniform("u_texture", reflection, 0);
 	plane.render(GL_TRIANGLES);
+}
+
+void SCN::Renderer::generateReflectionDeferred(Camera* camera)
+{
+	glClearColor(0.0, 0.0, 0.0, 0.0);	//TODO: check
+	glClear(GL_COLOR_BUFFER_BIT);
+
+
+	GFX::Shader* shader = GFX::Shader::Get("ambient_refelctions");
+	shader->enable();
+
+	bufferToShader(shader);
+	shader->setMatrix44("u_ivp", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_iRes", vec2(1.0 / deferred_reflections_fbo->color_textures[0]->width, 1.0 / deferred_reflections_fbo->color_textures[0]->height));
+	shader->setTexture("u_environment_texture", skybox_cubemap, 9);
+	shader->setUniform("u_camera_position", camera->eye);
+	quad->render(GL_TRIANGLES);
+
 }
 
 #ifndef SKIP_IMGUI
@@ -1698,8 +1728,6 @@ void Renderer::showUI()
 
 					if (ImGui::Button("Update Reflections"))
 						capture_reflectance = true;
-
-					//captureReflection();	//TODO put it right
 
 					ImGui::TreePop();
 				}

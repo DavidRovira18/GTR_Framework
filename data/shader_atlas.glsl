@@ -6,7 +6,7 @@ depth quad.vs depth.fs
 multi basic.vs multi.fs
 
 
-//forward
+//ROEWARD
 texture_improved basic.vs texture_improved.fs
 lights_multi basic.vs lights_multi.fs
 light_pbr basic.vs light_pbr.fs
@@ -31,6 +31,7 @@ irradiance quad.vs irradiance.fs
 //REFLECTIONS
 reflectionProbe basic.vs reflectionProbe.fs
 mirror basic.vs mirror.fs
+ambient_refelctions quad.vs ambient_refelctions.fs
 
 //Volumetric
 volumetric quad.vs volumetric.fs
@@ -2209,4 +2210,62 @@ void main()
 	vec3 R = reflect( E, N );
 	vec4 color = texture2D( u_texture, uv ) ;
 	FragColor = color;
+}
+
+
+\ambient_refelctions.fs
+
+#version 330 core
+
+in vec2 v_uv;
+
+uniform sampler2D u_albedo_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+uniform sampler2D u_depth_texture;
+uniform samplerCube u_environment_texture;
+
+uniform vec3 u_camera_position;
+
+uniform vec2 u_iRes;
+uniform mat4 u_ivp;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+	vec3 color = vec3(0.0);
+
+	float depth = texture(u_depth_texture, uv).r;
+
+	if(depth == 1.0)
+		discard;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+	
+	vec3 albedo = texture(u_albedo_texture, uv).rgb;
+	vec3 N = texture(u_normal_texture, v_uv).xyz;
+	float metalness = texture(u_normal_texture, v_uv).a;
+	float roughness = texture(u_extra_texture, v_uv).a;
+
+
+	vec3 E = normalize(world_pos - u_camera_position);
+	vec3 R = (reflect(E, N));
+
+
+	vec4 reflected_color = textureLod(u_environment_texture, R,	roughness * 5.0 );
+
+	//float fresnel = 1.0 - max(dot(N,-E), 0.0);
+	//fresnel = pow(fresnel, 2.0);
+	//float reflective_factor = fresnel * alpha * metalness;
+
+	//color = mix( color.xyz, reflected_color.xyz, reflective_factor);
+
+	color = albedo.xyz * reflected_color.xyz;
+
+	FragColor = vec4(color, metalness);
+
 }

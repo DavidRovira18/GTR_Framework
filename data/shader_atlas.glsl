@@ -1949,7 +1949,10 @@ uniform mat4 u_ivp;
 uniform mat4 u_imodel;
 uniform vec2 u_iRes;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 NormalColor;
+layout(location = 2) out vec4 ExtraColor;
+
 void main()
 {
 	//vec2 uv = v_uv;
@@ -1968,9 +1971,17 @@ void main()
 	vec3 decal_space = (u_imodel * vec4(world_pos, 1.0)).xyz;
 	decal_space = decal_space + vec3(0.5);
 
+	//if outside of the volume
+	if( decal_space.x < -0.5 || decal_space.x > 0.5 ||
+    decal_space.y < -0.5 || decal_space.y > 0.5 ||
+    decal_space.z < -0.5 || decal_space.z > 0.5 )
+		discard;
+
 	vec4 color = texture(u_color_texture, decal_space.xy);
 
 	FragColor = color;
+	NormalColor = vec4(0.0);
+	ExtraColor = vec4(0.0);
 }
 
 \gamma.fs

@@ -291,7 +291,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 
 		setupRenderFrame();
 
-		prioritySwitch();
+		renderByPriority();
 
 		if (show_reflection_probes)
 		{
@@ -330,7 +330,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//gbuffers_fbo->enableAllBuffers();
-		prioritySwitch();
+		renderByPriority();
 	gbuffers_fbo->unbind();
 	
 	if (decals.size())
@@ -1289,7 +1289,7 @@ void SCN::Renderer::captureIrradianceProbe(sProbe& probe)
 
 			setupRenderFrame();
 
-			prioritySwitch(eRenderMode::LIGHTS);
+			renderByPriority(eRenderMode::LIGHTS);
 		irr_fbo->unbind();
 
 		//read the pixels back and store in a FloatImage
@@ -1528,7 +1528,7 @@ void SCN::Renderer::captureReflection()
 
 					setupRenderFrame();
 
-					prioritySwitch(eRenderMode::LIGHTS);	//TODO: check mode
+					renderByPriority(eRenderMode::LIGHTS);	//TODO: check mode
 
 					reflections_fbo->unbind();
 				}
@@ -1589,7 +1589,7 @@ void SCN::Renderer::capturePlanerReflection()
 
 	setupRenderFrame();
 
-	prioritySwitch();
+	renderByPriority();
 
 	planer_reflection_fbo->unbind();
 }
@@ -1921,7 +1921,7 @@ void Renderer::storeDrawCallNoPriority(SCN::Node* node, Camera* camera)
 		storeDrawCallNoPriority(node->children[i], camera);
 }
 
-void Renderer::prioritySwitch(eRenderMode mode)
+void Renderer::renderByPriority(eRenderMode mode)
 {
 	switch (current_priority)
 	{
@@ -2021,7 +2021,7 @@ void Renderer::generateShadowMaps()
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		prioritySwitch(eRenderMode::SHADOWMAP);
+		renderByPriority(eRenderMode::SHADOWMAP);
 		
 		light->shadowmap_fbo->unbind();
 

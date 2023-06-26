@@ -258,7 +258,7 @@ namespace SCN {
 
 		void storeDrawCallNoPriority(SCN::Node* node, Camera* camera);
 
-		void prioritySwitch(eRenderMode mode = eRenderMode::NULLMODE);
+		void renderByPriority(eRenderMode mode = eRenderMode::NULLMODE);
 
 		void renderRenderCalls(RenderCall* rc, eRenderMode mode = eRenderMode::NULLMODE);
 

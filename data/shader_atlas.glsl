@@ -2117,6 +2117,93 @@ uniform float u_irr_multiplier;
 
 out vec4 FragColor;
 
+
+
+vec3 computeIrr( vec3 local_indices, vec3 N )
+{
+	//compute in which row is the probe stored
+	float row = local_indices.x + 
+	local_indices.y * u_irr_dims.x + 
+	local_indices.z * u_irr_dims.x * u_irr_dims.y;
+
+	//find the UV.y coord of that row in the probes texture
+	float row_uv = (row + 1.0) / (u_num_probes + 1.0);
+
+	SH9Color sh;
+
+	//fill the coefficients
+	const float d_uvx = 1.0 / 9.0;
+	for(int i = 0; i < 9; ++i)
+	{
+		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
+		sh.c[i] = texture( u_probes_texture, coeffs_uv).xyz;
+	}
+
+	//now we can use the coefficients to compute the irradiance
+	vec3 irradiance = max(vec3(0.0), ComputeSHIrradiance( N, sh ) * u_irr_multiplier);
+	return irradiance;
+}
+
+vec3 trilinearInterpolation(vec3 local_indices, vec3 factors, vec3 N)
+{
+	//local_indices points to Left,Bottom,Far
+	vec3 indicesLBF = local_indices;
+
+	//right bottom far index
+	vec3 indicesRBF = local_indices;
+	indicesRBF.x += 1; //from left to right
+
+	//left top far index
+	vec3 indicesLTF = local_indices;
+	indicesLTF.y += 1; 
+
+	//right top far index
+	vec3 indicesRTF = local_indices;
+	indicesRTF.y += 1; 
+	indicesRTF.x += 1; 
+
+	//left bottom near index
+	vec3 indicesLBN = local_indices;
+	indicesLBN.z += 1; 
+
+	//right bottom near index
+	vec3 indicesRBN = local_indices;
+	indicesRBN.x += 1; 
+	indicesRBN.z += 1; 
+
+	//left top near index
+	vec3 indicesLTN = local_indices;
+	indicesLTN.y += 1; 
+	indicesLTN.z += 1; 
+
+	// right top near index
+	vec3 indicesRTN = local_indices;
+	indicesRTN.y += 1; 
+	indicesRTN.x += 1; 
+	indicesRTN.z += 1; 
+
+	//compute irradiance for every corner
+	vec3 irrLBF = computeIrr( indicesLBF, N );
+	vec3 irrRBF = computeIrr( indicesRBF, N );
+	vec3 irrLTF = computeIrr( indicesLTF, N );
+	vec3 irrRTF = computeIrr( indicesRTF, N );
+	vec3 irrLBN = computeIrr( indicesLBN, N );
+	vec3 irrRBN = computeIrr( indicesRBN, N );
+	vec3 irrLTN = computeIrr( indicesLTN, N );
+	vec3 irrRTN = computeIrr( indicesRTN, N );
+
+	vec3 irrTF = mix( irrLTF, irrRTF, factors.x );
+	vec3 irrBF = mix( irrLBF, irrRBF, factors.x );
+	vec3 irrTN = mix( irrLTN, irrRTN, factors.x );
+	vec3 irrBN = mix( irrLBN, irrRBN, factors.x );
+
+	vec3 irrT = mix( irrTF, irrTN, factors.z );
+	vec3 irrB = mix( irrBF, irrBN, factors.z );
+
+	return mix( irrB, irrT, factors.y );
+
+}
+
 void main()
 {
 	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
@@ -2147,29 +2234,13 @@ void main()
 	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
 
 	//round values as we cannot fetch between rows for now
-	vec3 local_indices = round( irr_norm_pos );
+	vec3 local_indices = floor( irr_norm_pos );
 
-	//compute in which row is the probe stored
-	float row = local_indices.x + 
-	local_indices.y * u_irr_dims.x + 
-	local_indices.z * u_irr_dims.x * u_irr_dims.y;
+	//now we have the interpolation factors
+	vec3 factors = irr_norm_pos - local_indices; 
 
-	//find the UV.y coord of that row in the probes texture
-	float row_uv = (row + 1.0) / (u_num_probes + 1.0);
-
-	SH9Color sh;
-
-	//fill the coefficients
-	const float d_uvx = 1.0 / 9.0;
-	for(int i = 0; i < 9; ++i)
-	{
-		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
-		sh.c[i] = texture( u_probes_texture, coeffs_uv).xyz;
-	}
-
-	//now we can use the coefficients to compute the irradiance
-	vec3 irradiance = max(vec3(0.0), ComputeSHIrradiance( N, sh ) * u_irr_multiplier);
-	irradiance *= albedo.xyz;
+	
+	vec3 irradiance = trilinearInterpolation(local_indices, factors, N) * albedo.xyz;
 
 	FragColor = vec4(irradiance, 1.0);
 }

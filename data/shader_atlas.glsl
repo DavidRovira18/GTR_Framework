@@ -1830,6 +1830,8 @@ uniform mat4 u_ivp;
 uniform vec2 u_iRes;
 uniform vec3 u_camera_position;
 uniform float u_air_density;
+uniform float u_time;
+uniform bool u_constant_denisty;
 
 #define SAMPLES 64
 
@@ -1842,6 +1844,17 @@ out vec4 FragColor;
 float rand(vec2 co)
 {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float rand3(vec3 seed)
+{
+    return fract(sin(dot(seed, vec3(12.9898, 78.233, 45.543))) * 43758.5453);
+}
+
+float rand3mix(vec3 seed, float min, float max)
+{
+    float random = fract(sin(dot(seed, vec3(12.9898, 78.233, 45.543))) * 43758.5453);
+	return mix(min, max, random);
 }
 
 vec3 computeLight( vec3 pos )
@@ -1884,10 +1897,9 @@ vec3 computeLight( vec3 pos )
 		attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
 		
 		
-		light *= attenuation * shadow_factor;
+		light *= attenuation * shadow_factor + u_ambient_light;
 	}
 
-	light += u_ambient_light;
 	return light;
 }
 
@@ -1921,6 +1933,13 @@ void main()
 
 	for(int i = 0; i < SAMPLES; ++i)
 	{
+		if(!u_constant_denisty)
+		{
+			air_step =  u_air_density * step_dist * rand3(current_pos);
+		 //air_step = rand3mix(current_pos, 0.001, u_air_density * step_dist); 
+
+		}
+
 		//evaluate contribution
 		vec3 light = computeLight( current_pos );
 

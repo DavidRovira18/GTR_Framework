@@ -156,6 +156,7 @@ namespace SCN {
 		GFX::FBO* volumetric_fbo = nullptr;
 		bool show_volumetric = false;
 		float air_density;
+		bool constant_density = true;
 
 		//DECALS
 		std::vector<DecalEntity*> decals;

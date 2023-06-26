@@ -1102,6 +1102,9 @@ void SCN::Renderer::generateVolumetricAir(Camera* camera)
 	shader->setUniform("u_camera_position", camera->eye);
 	shader->setUniform("u_air_density", air_density);
 	shader->setUniform("u_ambient_light", scene->ambient_light);
+	shader->setUniform("u_constant_denisty", constant_density);
+
+	
 
 	for (auto light : lights)
 	{
@@ -1782,8 +1785,7 @@ void Renderer::showUI()
 
 				ImGui::Checkbox("Show SSAO fbo", &show_ssao);
 
-				ImGui::DragFloat("Air density", &air_density, 0.0001, 0.0, 0.1);  //TODO
-				ImGui::Checkbox("Show volumetric fbo", &show_volumetric);
+				
 
 				ImGui::TreePop();
 			}
@@ -1808,6 +1810,15 @@ void Renderer::showUI()
 			{
 				ImGui::Checkbox("Enable reflections", &enable_reflections);
 				ImGui::Checkbox("Show reflection fbo", &show_reflection_fbo);
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Volumetric"))
+			{
+				ImGui::DragFloat("Air density", &air_density, 0.0001, 0.0, 0.1);  //TODO
+				ImGui::Checkbox("Use constant density", &constant_density);
+				ImGui::Checkbox("Show volumetric fbo", &show_volumetric);
 
 				ImGui::TreePop();
 			}

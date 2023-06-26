@@ -165,6 +165,8 @@ void main()
 {
 	vec3 E = v_world_position - u_camera_position;
 	vec4 color = texture( u_texture, E ) * u_skybox_intensity;
+	color.xyz = pow(color.xyz, vec3(2.2));
+
 	FragColor = color;
 }
 
@@ -2258,24 +2260,24 @@ void main()
 	vec3 world_pos = world_proj.xyz / world_proj.w;
 	
 	vec3 albedo = texture(u_albedo_texture, uv).rgb;
-	vec3 N = texture(u_normal_texture, v_uv).xyz;
-	float metalness = texture(u_normal_texture, v_uv).a;
-	float roughness = texture(u_extra_texture, v_uv).a;
+	vec3 N = texture(u_normal_texture, uv).xyz;
+	float metalness = texture(u_normal_texture, uv).a;
+	float roughness = texture(u_extra_texture, uv).a;
 
 
-	vec3 E = normalize(world_pos - u_camera_position);
+	vec3 E = normalize( world_pos - u_camera_position);
 	vec3 R = (reflect(E, N));
 
 
 	vec4 reflected_color = textureLod(u_environment_texture, R,	roughness * 5.0 );
+	reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
 
-	//float fresnel = 1.0 - max(dot(N,-E), 0.0);
-	//fresnel = pow(fresnel, 2.0);
-	//float reflective_factor = fresnel * alpha * metalness;
+	
+	float fresnel = 1.0 - max(dot(N,-E), 0.0);
+	fresnel = pow(fresnel, 2.0);
 
-	//color = mix( color.xyz, reflected_color.xyz, reflective_factor);
+	color = albedo.xyz * reflected_color.xyz; // * fresnel;
 
-	color = albedo.xyz * reflected_color.xyz;
 
 	FragColor = vec4(color, metalness);
 

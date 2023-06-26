@@ -366,7 +366,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		deferred_reflections_fbo->unbind();
 
 
-		if (!show_ssao && !show_volumetric) {
+		if (!show_ssao && !show_volumetric && !show_reflection_fbo) {
 			//Compute illumination
 			illumination_fbo->bind();
 				computeIlluminationDeferred();
@@ -391,7 +391,8 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 		ssao_fbo->color_textures[0]->toViewport();
 	}
 	
-	//deferred_reflections_fbo->color_textures[0]->toViewport();
+	if(show_reflection_fbo)
+		deferred_reflections_fbo->color_textures[0]->toViewport();
 }
 
 void Renderer::renderSkybox(GFX::Texture* cubemap, float intensity)
@@ -834,7 +835,7 @@ void SCN::Renderer::renderDeferred()
 	GFX::Shader* shader = nullptr;
 	renderDeferredGlobal(shader);
 
-	if(show_irradiance)
+	if(enable_irradiance)
 		applyIrradiance();
 
 	Camera* camera = Camera::current;
@@ -856,6 +857,16 @@ void SCN::Renderer::renderDeferred()
 
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 				volumetric_fbo->color_textures[0]->toViewport();
+			glDisable(GL_BLEND);
+		}
+
+		if (enable_reflections)
+		{
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			deferred_reflections_fbo->color_textures[0]->toViewport();
 			glDisable(GL_BLEND);
 		}
 
@@ -884,7 +895,7 @@ void SCN::Renderer::renderDeferredGlobal(GFX::Shader* shader)
 	shader->enable();
 
 	bufferToShader(shader);
-	shader->setUniform("u_ambient_light", show_irradiance ? 0.0 : scene->ambient_light ^ 2.2f);
+	shader->setUniform("u_ambient_light", enable_irradiance ? 0.0 : scene->ambient_light ^ 2.2f);
 	//shader->setUniform("u_ambient_light", vec3());
 
 	shader->setTexture("u_ao_texture", ssao_fbo->color_textures[0], 4);
@@ -1605,6 +1616,7 @@ void SCN::Renderer::generateReflectionDeferred(Camera* camera)
 {
 	glClearColor(0.0, 0.0, 0.0, 0.0);	//TODO: check
 	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
 
 
 	GFX::Shader* shader = GFX::Shader::Get("ambient_refelctions");
@@ -1617,6 +1629,7 @@ void SCN::Renderer::generateReflectionDeferred(Camera* camera)
 	shader->setUniform("u_camera_position", camera->eye);
 	quad->render(GL_TRIANGLES);
 
+	glEnable(GL_DEPTH_TEST);
 }
 
 #ifndef SKIP_IMGUI
@@ -1724,7 +1737,7 @@ void Renderer::showUI()
 				{
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
 					ImGui::Checkbox("Show reflection cache", &show_reflection_probes); 
-					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection);
+					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection); 
 
 					if (ImGui::Button("Update Reflections"))
 						capture_reflectance = true;
@@ -1777,7 +1790,7 @@ void Renderer::showUI()
 
 			if (ImGui::TreeNode("Irradiance"))
 			{
-				ImGui::Checkbox("Render with irradiance", &show_irradiance);
+				ImGui::Checkbox("Render with irradiance", &enable_irradiance);
 
 				if (ImGui::Button("Update Probes"))
 					capture_irradiance = true;
@@ -1787,6 +1800,14 @@ void Renderer::showUI()
 				ImGui::Checkbox("Show irradiance cache", &show_probes);
 
 				ImGui::SliderFloat("Irradiance multiplier", &irradiance_multiplier, 0.0, 10.0);
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("Reflections"))
+			{
+				ImGui::Checkbox("Enable reflections", &enable_reflections);
+				ImGui::Checkbox("Show reflection fbo", &show_reflection_fbo);
 
 				ImGui::TreePop();
 			}

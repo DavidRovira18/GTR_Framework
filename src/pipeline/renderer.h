@@ -127,7 +127,7 @@ namespace SCN {
 		bool show_probes = false;
 		sIrradianceHeader irradiance_cache_info;
 		float irradiance_multiplier = 1.0f;
-		bool show_irradiance = false;
+		bool enable_irradiance = false;
 
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;
@@ -137,7 +137,7 @@ namespace SCN {
 		bool capture_reflectance = false;
 		bool show_planer_reflection = false;
 		GFX::FBO* deferred_reflections_fbo = nullptr;
-
+		bool show_reflection_fbo = false;
 		
 		bool show_buffers = false;
 		bool show_globalpos = false;

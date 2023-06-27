@@ -161,6 +161,21 @@ namespace SCN {
 		//DECALS
 		std::vector<DecalEntity*> decals;
 
+		//POSTFX
+		GFX::FBO* postFX_bufferIN = nullptr;
+		GFX::FBO* postFX_bufferOUT = nullptr;
+			//ColorCorrection
+			bool enable_color_correction = false;	
+
+			float fx_brightness = 1.0f;
+			float fx_red_balance = 1.0f;
+			float fx_green_balance = 1.0f;
+			float fx_blue_balance = 1.0f;
+
+			//Blur
+			bool enable_blur = false;
+			float fx_blur_intensity = 1.0;
+
 		//TONEMAPPER
 		bool enable_tonemapper;
 		int current_tonemapper;
@@ -265,8 +280,9 @@ namespace SCN {
 
 		void renderShadowmaps();
 
-		void renderTonemapper();
-		void renderGamma();
+		void renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth_buffer);
+		void renderTonemapper(GFX::Texture* color_buffer);
+		void renderGamma(GFX::Texture* color_buffer);
 	};
 
 };

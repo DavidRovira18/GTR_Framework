@@ -39,6 +39,10 @@ volumetric quad.vs volumetric.fs
 //Decals
 decal basic.vs decal.fs
 
+//POSTFX
+fx_color_correction quad.vs fx_color_correction.fs
+fx_blur quad.vs fx_blur.fs
+
 gamma quad.vs gamma.fs
 
 //TONEMAPPER
@@ -2370,5 +2374,56 @@ void main()
 
 
 	FragColor = vec4(color, metalness);
+}
 
+\fx_color_correction.fs
+#version 330 core
+
+uniform sampler2D u_texture; 
+uniform float u_brightness;
+uniform float u_r_balance;
+uniform float u_g_balance;
+uniform float u_b_balance;
+
+in vec2 v_uv;
+out vec4 FragColor;
+
+void main()
+{
+	vec4 color = texture(u_texture, v_uv);
+	
+	color.xyz *= u_brightness;
+
+	//Color Balance
+	color.x *= u_r_balance;
+	color.y *= u_g_balance;
+	color.z *= u_b_balance;
+	
+	FragColor = color;
+}
+
+\fx_blur.fs
+#version 330 core
+
+in vec2 v_uv;
+out vec4 FragColor;
+	
+//linear blur shader of 9 samples
+precision highp float;
+uniform sampler2D u_texture;
+uniform vec2 u_offset;
+uniform float u_intensity;
+void main() 
+{
+   vec4 sum = vec4(0.0);
+   sum += texture(u_texture, v_uv + u_offset * -4.0) * 0.05/0.98;
+   sum += texture(u_texture, v_uv + u_offset * -3.0) * 0.09/0.98;
+   sum += texture(u_texture, v_uv + u_offset * -2.0) * 0.12/0.98;
+   sum += texture(u_texture, v_uv + u_offset * -1.0) * 0.15/0.98;
+   sum += texture(u_texture, v_uv) * 0.16/0.98;
+   sum += texture(u_texture, v_uv + u_offset * 4.0) * 0.05/0.98;
+   sum += texture(u_texture, v_uv + u_offset * 3.0) * 0.09/0.98;
+   sum += texture(u_texture, v_uv + u_offset * 2.0) * 0.12/0.98;
+   sum += texture(u_texture, v_uv + u_offset * 1.0) * 0.15/0.98;
+   FragColor = u_intensity * sum;
 }

@@ -309,9 +309,9 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 	illumination_fbo->unbind();
 	
 	if (enable_tonemapper)
-		renderTonemapper();
+		renderTonemapper(illumination_fbo->color_textures[0]);
 	else
-		renderGamma();
+		renderGamma(illumination_fbo->color_textures[0]);
 
 
 	
@@ -372,11 +372,7 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 				computeIlluminationDeferred();
 			illumination_fbo->unbind();
 
-
-			if (enable_tonemapper)
-				renderTonemapper();
-			else
-				renderGamma();
+			renderPostFX(illumination_fbo->color_textures[0], illumination_fbo->depth_texture);
 		}
 
 
@@ -1069,7 +1065,10 @@ void SCN::Renderer::createDecals(Camera* camera)
 
 	for (auto decal : decals)
 	{
-		texture = decal->filename.size() == 0 ? GFX::Texture::getWhiteTexture() : GFX::Texture::Get((std::string("data/") + decal->filename).c_str());
+		if (decal->filename.size() == 0)
+			continue;
+
+		texture = GFX::Texture::Get((std::string("data/") + decal->filename).c_str());
 		shader->setUniform("u_model", decal->root.model);
 		Matrix44 imodel = decal->root.model;
 		imodel.inverse();
@@ -1816,9 +1815,36 @@ void Renderer::showUI()
 
 			if (ImGui::TreeNode("Volumetric"))
 			{
-				ImGui::DragFloat("Air density", &air_density, 0.0001, 0.0, 0.1);  //TODO
+				ImGui::DragFloat("Air density", &air_density, 0.0001, 0.0, 0.1);
 				ImGui::Checkbox("Use constant density", &constant_density);
 				ImGui::Checkbox("Show volumetric fbo", &show_volumetric);
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("PostFX"))
+			{
+				if(ImGui::TreeNode("Color Correction"))
+				{
+					ImGui::Checkbox("Enable Color Correction", &enable_color_correction);
+					if (enable_color_correction)
+					{
+						ImGui::SliderFloat("Brightness", &fx_brightness, 0.0, 5.0);
+						ImGui::SliderFloat("Red Balance", &fx_red_balance, 0.0, 5.0);
+						ImGui::SliderFloat("Green Balance", &fx_green_balance, 0.0, 5.0);
+						ImGui::SliderFloat("Blue Balance", &fx_blue_balance, 0.0, 5.0);
+					}
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Blur"))
+				{
+					ImGui::Checkbox("Enable Blur", &enable_blur);
+					if (enable_blur)
+					{
+						ImGui::SliderFloat("Blur Intensity", &fx_blur_intensity, 0.0, 5.0);
+					}
+					ImGui::TreePop();
+				}
 
 				ImGui::TreePop();
 			}
@@ -2126,7 +2152,62 @@ void Renderer::renderShadowmaps()
 	glEnable(GL_BLEND);
 }
 
-void SCN::Renderer::renderTonemapper()
+void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth_buffer)
+{
+	if (!postFX_bufferIN || CORE::BaseApplication::instance->window_resized)
+	{
+		postFX_bufferIN = new GFX::FBO();
+		postFX_bufferIN->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	if (!postFX_bufferOUT || CORE::BaseApplication::instance->window_resized)
+	{
+		postFX_bufferOUT = new GFX::FBO();
+		postFX_bufferOUT->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	GFX::Shader* shader;
+	postFX_bufferIN->bind();
+		color_buffer->toViewport();	
+	postFX_bufferIN->unbind();
+
+	if (enable_color_correction)
+	{
+		postFX_bufferOUT->bind();
+			shader = GFX::Shader::Get("fx_color_correction");
+			shader->enable();
+			shader->setUniform("u_brightness", fx_brightness);
+			shader->setUniform("u_r_balance", fx_red_balance);
+			shader->setUniform("u_g_balance", fx_green_balance);
+			shader->setUniform("u_b_balance", fx_blue_balance);
+			postFX_bufferIN->color_textures[0]->toViewport(shader);
+		postFX_bufferOUT->unbind();
+
+		std::swap(postFX_bufferIN, postFX_bufferOUT);
+	}
+
+	if (enable_blur)
+	{
+		postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_blur");
+		shader->enable();
+		shader->setUniform("u_intensity", fx_blur_intensity);
+		shader->setUniform("u_offset", vec2(1.0f/color_buffer->width, 0.0));
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+		postFX_bufferOUT->unbind();
+
+		std::swap(postFX_bufferIN, postFX_bufferOUT);
+	}
+
+	if (enable_tonemapper)
+		renderTonemapper(postFX_bufferIN->color_textures[0]);
+	else
+		renderGamma(postFX_bufferIN->color_textures[0]);
+}
+
+void SCN::Renderer::renderTonemapper(GFX::Texture* color_buffer)
 {
 	GFX::Shader* shader;
 	//TONEMAPPER
@@ -2144,15 +2225,15 @@ void SCN::Renderer::renderTonemapper()
 		shader->enable();
 	}
 
-	illumination_fbo->color_textures[0]->toViewport(shader);
+	color_buffer->toViewport(shader);
 	//reflections_fbo->color_textures[0]->toViewport(shader);
 	shader->disable();
 }
 
-void SCN::Renderer::renderGamma()
+void SCN::Renderer::renderGamma(GFX::Texture* color_buffer)
 {
 	GFX::Shader* shader = GFX::Shader::Get("gamma");
 	shader->enable();
 	shader->setUniform("u_igamma", 1.0f / gamma);
-	illumination_fbo->color_textures[0]->toViewport(shader);
+	color_buffer->toViewport(shader);
 }

@@ -164,6 +164,7 @@ namespace SCN {
 		//POSTFX
 		GFX::FBO* postFX_bufferIN = nullptr;
 		GFX::FBO* postFX_bufferOUT = nullptr;
+		GFX::FBO* postFX_bufferTEMP = nullptr;
 			//ColorCorrection
 			bool enable_color_correction = false;	
 
@@ -172,9 +173,11 @@ namespace SCN {
 			float fx_green_balance = 1.0f;
 			float fx_blue_balance = 1.0f;
 
-			//Blur
+			//Bloom
 			bool enable_blur = false;
+			bool enable_bloom = false;
 			float fx_blur_intensity = 1.0;
+			int fx_blur_num_iter = 1;
 
 		//TONEMAPPER
 		bool enable_tonemapper;
@@ -280,7 +283,10 @@ namespace SCN {
 
 		void renderShadowmaps();
 
+		//POSTFX
 		void renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth_buffer);
+		void renderColorCorrection(GFX::Shader* shader);
+		void renderBlur(GFX::Shader* shader);
 		void renderTonemapper(GFX::Texture* color_buffer);
 		void renderGamma(GFX::Texture* color_buffer);
 	};

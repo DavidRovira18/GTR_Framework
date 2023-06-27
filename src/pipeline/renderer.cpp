@@ -1836,12 +1836,20 @@ void Renderer::showUI()
 					}
 					ImGui::TreePop();
 				}
-				if (ImGui::TreeNode("Blur"))
+				if (ImGui::TreeNode("Bloom"))
 				{
 					ImGui::Checkbox("Enable Blur", &enable_blur);
+					ImGui::Checkbox("Enable Bloom", &enable_bloom);
+					
+					if (enable_bloom)
+						enable_blur = false;
 					if (enable_blur)
+						enable_bloom = false;
+
+					if (enable_bloom || enable_blur)
 					{
 						ImGui::SliderFloat("Blur Intensity", &fx_blur_intensity, 0.0, 5.0);
+						ImGui::SliderInt("Num iterations", &fx_blur_num_iter, 1, 10);
 					}
 					ImGui::TreePop();
 				}
@@ -2168,43 +2176,87 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 		CORE::BaseApplication::instance->window_resized = false;
 	}
 
-	GFX::Shader* shader;
+	if (!postFX_bufferTEMP || CORE::BaseApplication::instance->window_resized)
+	{
+		postFX_bufferTEMP = new GFX::FBO();
+		postFX_bufferTEMP->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
+		CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	GFX::Shader* shader = nullptr;
 	postFX_bufferIN->bind();
 		color_buffer->toViewport();	
 	postFX_bufferIN->unbind();
 
 	if (enable_color_correction)
-	{
-		postFX_bufferOUT->bind();
-			shader = GFX::Shader::Get("fx_color_correction");
-			shader->enable();
-			shader->setUniform("u_brightness", fx_brightness);
-			shader->setUniform("u_r_balance", fx_red_balance);
-			shader->setUniform("u_g_balance", fx_green_balance);
-			shader->setUniform("u_b_balance", fx_blue_balance);
-			postFX_bufferIN->color_textures[0]->toViewport(shader);
-		postFX_bufferOUT->unbind();
-
-		std::swap(postFX_bufferIN, postFX_bufferOUT);
-	}
-
+		renderColorCorrection(shader);
+		
 	if (enable_blur)
-	{
-		postFX_bufferOUT->bind();
-		shader = GFX::Shader::Get("fx_blur");
-		shader->enable();
-		shader->setUniform("u_intensity", fx_blur_intensity);
-		shader->setUniform("u_offset", vec2(1.0f/color_buffer->width, 0.0));
-		postFX_bufferIN->color_textures[0]->toViewport(shader);
-		postFX_bufferOUT->unbind();
+		renderBlur(shader);
 
-		std::swap(postFX_bufferIN, postFX_bufferOUT);
+	if (enable_bloom)
+	{
+		postFX_bufferTEMP->bind();
+			postFX_bufferIN->color_textures[0]->toViewport();
+		postFX_bufferTEMP->unbind();
+
+		renderBlur(shader);
+
+		postFX_bufferIN->bind();
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			postFX_bufferTEMP->color_textures[0]->toViewport();
+		postFX_bufferIN->unbind();
+		glDisable(GL_BLEND);
 	}
 
 	if (enable_tonemapper)
 		renderTonemapper(postFX_bufferIN->color_textures[0]);
 	else
 		renderGamma(postFX_bufferIN->color_textures[0]);
+}
+
+void SCN::Renderer::renderColorCorrection(GFX::Shader* shader)
+{
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_color_correction");
+		shader->enable();
+		shader->setUniform("u_brightness", fx_brightness);
+		shader->setUniform("u_r_balance", fx_red_balance);
+		shader->setUniform("u_g_balance", fx_green_balance);
+		shader->setUniform("u_b_balance", fx_blue_balance);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+}
+
+void SCN::Renderer::renderBlur(GFX::Shader* shader)
+{
+	int power = 1;
+	for (int i = 0; i < fx_blur_num_iter; ++i)
+	{
+		//Horizontal blur
+		postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_blur");
+		shader->enable();
+		shader->setUniform("u_intensity", fx_blur_intensity);
+		shader->setUniform("u_offset", vec2(1.0f / postFX_bufferIN->color_textures[0]->width, 0.0) * (float)power);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+		postFX_bufferOUT->unbind();
+
+		std::swap(postFX_bufferIN, postFX_bufferOUT);
+
+		//Vertical blur
+		postFX_bufferOUT->bind();
+		shader->enable();
+		shader->setUniform("u_offset", vec2(0.0, 1.0f / postFX_bufferIN->color_textures[0]->height) * (float)power);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+		postFX_bufferOUT->unbind();
+
+		std::swap(postFX_bufferIN, postFX_bufferOUT);
+		power = power << 1;
+	}
 }
 
 void SCN::Renderer::renderTonemapper(GFX::Texture* color_buffer)

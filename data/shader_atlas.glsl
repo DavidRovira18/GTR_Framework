@@ -2427,3 +2427,4 @@ void main()
    sum += texture(u_texture, v_uv + u_offset * 1.0) * 0.15/0.98;
    FragColor = u_intensity * sum;
 }
+

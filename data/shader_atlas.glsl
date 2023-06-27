@@ -585,6 +585,9 @@ uniform sampler2D u_normal_texture;
 uniform vec3 u_emissive_factor;
 uniform vec2 u_mat_properties;	// (metallic_factor, roughness_factor)
 
+uniform sampler2D u_planer_reflection_texture;
+uniform bool u_planer_reflection;
+
 uniform samplerCube u_environment;
 uniform bool u_enable_reflections;
 
@@ -614,6 +617,9 @@ void main()
 
 	if(albedo.a < u_alpha_cutoff)
 		discard;
+
+	if(v_world_position.y < 0.0)	//TODO: do it only for planer reflections with the floor
+		discard;	
 
 	vec3 light = vec3(0.0);
 	vec3 N = vec3(0.0);
@@ -713,8 +719,33 @@ void main()
 	{
 		vec3 E = normalize(v_world_position - u_camera_position);
 		R = (reflect(E, N));
-		vec3 reflected_color = texture(u_environment, R).xyz;
-		reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
+		
+		vec3 reflected_color;
+
+		if(u_planer_reflection)
+		{
+			//vec2 uv = gl_FragCoord.xy * u_iRes;
+			uv.x = 1.0 - uv.x;
+
+			//vec3 N = normalize( v_normal );
+			//vec3 E = normalize(v_world_position - u_camera_position);
+			//vec3 R = reflect( E, N );
+
+			// float fresnel = 1;
+
+			// if(u_apply_fresnel)
+			// {
+			//	fresnel = pow(1.0 - max(0.0, dot(-E, N)), 2.0);
+			// }
+
+			reflected_color = texture2D( u_planer_reflection_texture, uv ).xyz; // * fresnel;
+		}
+		else
+		{
+			reflected_color = texture(u_environment, R).xyz;
+			reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
+
+		}
 	
 		float fresnel = 1.0 - max(dot(N,-E), 0.0);
 		fresnel = pow(fresnel, 2.0);
@@ -2302,6 +2333,7 @@ in vec3 v_world_position;
 uniform sampler2D u_texture;
 uniform vec3 u_camera_position;
 uniform vec2 u_iRes;
+uniform bool u_apply_fresnel;
 
 out vec4 FragColor;
 
@@ -2313,10 +2345,16 @@ void main()
 	uv.x = 1.0 - uv.x;
 
 	vec3 N = normalize( v_normal );
-	vec3 E = v_world_position - u_camera_position;
+	vec3 E = normalize(v_world_position - u_camera_position);
 	vec3 R = reflect( E, N );
-	vec4 color = texture2D( u_texture, uv ) ;
-	FragColor = color;
+	float fresnel = 1;
+
+	if(u_apply_fresnel)
+	{
+		fresnel = pow(1.0 - max(0.0, dot(-E, N)), 2.0);
+	}
+
+	vec4 color = texture2D( u_texture, uv ) * fresnel;	FragColor = color;
 }
 
 

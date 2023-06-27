@@ -54,7 +54,7 @@ Renderer::Renderer(const char* shader_atlas_filename)
 	sphere.createSphere(1.0f);
 	sphere.uploadToVRAM();
 
-	plane.createPlane(100.0);
+	plane.createPlane(500.0);
 	plane.uploadToVRAM();
 
 	box.createCube(1.0f);
@@ -258,27 +258,9 @@ void SCN::Renderer::setupRenderFrame()
 
 void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 {
-	static Camera simetric_camera;
-	vec2 size = CORE::getWindowSize();
-
-	//render planer reflection
-	if (!planer_reflection_fbo)		//TODO: put it somewhere else ?
-	{
-		planer_reflection_fbo = new GFX::FBO();
-		planer_reflection_fbo->create(size.x, size.y, 1, GL_RGBA, GL_FLOAT);
-	}
-
-	simetric_camera = *camera;
-	vec3 pos = camera->eye;
-	pos.y *= -1;
-	vec3 target = camera->center;
-	target.y *= -1;
-	simetric_camera.lookAt(pos, target, camera->up * -1.0f);
-
-	simetric_camera.enable();
-
+	
 	if (show_planer_reflection)
-		capturePlanerReflection();
+		capturePlanerReflection(camera);
 
 	
 	//set the camera as default (used by some functions in the framework)
@@ -1207,6 +1189,17 @@ void SCN::Renderer::materialToShader(GFX::Shader* shader, SCN::Material* materia
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
 	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 	shader->setUniform("u_mat_properties", vec2(material->metallic_factor, material->roughness_factor));
+
+	/*
+	bool has_planer_reflection = material->planer_reflection && show_planer_reflection;
+	if (has_planer_reflection)
+	{
+		shader->setTexture("u_planer_reflection_texture", planer_reflection_fbo->color_textures[0], 5);
+		shader->setUniform("u_apply_fresnel", use_fresnel_planer_reflection);
+	}
+
+	shader->setUniform("u_planer_reflection", has_planer_reflection);
+	*/
 }
 
 void Renderer::renderTransparenciesForward()
@@ -1581,17 +1574,36 @@ sReflectionProbe* SCN::Renderer::getClosestReflectionProbe(Matrix44 model)
 		return nullptr;
 }
 
-void SCN::Renderer::capturePlanerReflection()
+void SCN::Renderer::capturePlanerReflection(Camera* camera)
 {
+
+	static Camera simetric_camera;
+	vec2 size = CORE::getWindowSize();
+
+	//render planer reflection
+	if (!planer_reflection_fbo)		//TODO: put it somewhere else ?
+	{
+		planer_reflection_fbo = new GFX::FBO();
+		planer_reflection_fbo->create(size.x, size.y, 1, GL_RGBA, GL_FLOAT);
+	}
+
+	simetric_camera = *camera;
+	vec3 pos = camera->eye;
+	pos.y *= -1;
+	vec3 target = camera->center;
+	target.y *= -1;
+	simetric_camera.lookAt(pos, target, camera->up * -1.0f);
+
+	simetric_camera.enable();
+
 	planer_reflection_fbo->bind();
+		
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
 
-	
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
+		setupRenderFrame();
 
-	setupRenderFrame();
-
-	renderByPriority();
+		renderByPriority();
 
 	planer_reflection_fbo->unbind();
 }
@@ -1611,6 +1623,8 @@ void SCN::Renderer::renderPlanerReflectionFBO(Camera* camera)
 	shader->setUniform("u_model", model);
 	shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 	shader->setUniform("u_texture", reflection, 0);
+	shader->setUniform("u_apply_fresnel", use_fresnel_planer_reflection);
+
 	plane.render(GL_TRIANGLES);
 }
 
@@ -1739,10 +1753,17 @@ void Renderer::showUI()
 				{
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
 					ImGui::Checkbox("Show reflection cache", &show_reflection_probes); 
-					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection); 
 
 					if (ImGui::Button("Update Reflections"))
 						capture_reflectance = true;
+
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("Planer Reflections"))
+				{
+					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection);
+					ImGui::Checkbox("Enable fresnel", &use_fresnel_planer_reflection);
 
 					ImGui::TreePop();
 				}

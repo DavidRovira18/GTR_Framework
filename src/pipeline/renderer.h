@@ -136,6 +136,7 @@ namespace SCN {
 		bool show_reflection_probes = false;
 		bool capture_reflectance = false;
 		bool show_planer_reflection = false;
+		bool use_fresnel_planer_reflection = false;
 		GFX::FBO* deferred_reflections_fbo = nullptr;
 		bool show_reflection_fbo = false;
 		
@@ -259,7 +260,7 @@ namespace SCN {
 		void captureReflection();
 		void renderReflectionProbe(sReflectionProbe& probe);
 		sReflectionProbe* getClosestReflectionProbe(Matrix44 model);
-		void capturePlanerReflection();
+		void capturePlanerReflection(Camera* camera);
 		void renderPlanerReflectionFBO(Camera* camera);
 		void generateReflectionDeferred(Camera* camera);
 

@@ -43,6 +43,7 @@ decal basic.vs decal.fs
 fx_color_correction quad.vs fx_color_correction.fs
 fx_vigneting quad.vs fx_vigneting.fs
 fx_grain quad.vs fx_grain.fs
+fx_lens_distortion quad.vs fx_lens_distortion.fs
 fx_motion_blur quad.vs fx_motion_blur.fs
 fx_blur quad.vs fx_blur.fs
 
@@ -2506,6 +2507,48 @@ void main()
 	
 	color.xyz += grain;
 	
+	FragColor = color;
+}
+
+\fx_lens_distortion.fs
+#version 330 core
+
+in vec2 v_uv;
+out vec4 FragColor;
+	
+uniform sampler2D u_texture;
+
+uniform vec2 u_center;
+uniform vec2 u_iRes;
+uniform int u_type;
+uniform float u_distortion;
+
+void main() 
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+	
+	vec2 offset = uv - u_center;
+	
+	float dist2center = distance(offset, u_center);
+
+	float distortion = dist2center * u_distortion;
+
+	vec2 distorted_uv = uv + offset * distortion;
+	
+	vec4 color = vec4(0.0);
+	if(u_type == 0)
+	{
+		color = texture(u_texture, distorted_uv);
+	}
+
+	else
+	{
+		vec2 barrel = (distorted_uv - u_center) * (1.0 + distortion);
+		vec2 barrel_uv = (barrel + u_center) * u_iRes;
+
+		color = texture(u_texture, barrel_uv);
+	}
+
 	FragColor = color;
 }
 

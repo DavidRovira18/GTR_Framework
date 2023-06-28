@@ -186,6 +186,15 @@ namespace SCN {
 			bool enable_grain = false;
 			float fx_grain = 1.0f;
 
+			//Lens distortion
+			bool enable_lens_distortion = false;
+			enum eDistortionType {
+				PINCUSHION,
+				BARREL
+			};
+			eDistortionType current_distortion = eDistortionType::PINCUSHION;
+			float fx_distortion = 1.0f;
+
 			//MotionBlur
 			bool enable_motion_blur = false;
 			Matrix44 prev_view_proj;
@@ -313,8 +322,9 @@ namespace SCN {
 		void renderColorCorrection(GFX::Shader* shader);
 		void renderVigneting(GFX::Shader* shader);
 		void renderGrain(GFX::Shader* shader);
+		void renderLensDistortion(GFX::Shader* shader);
 		void renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer);
-		void renderBlur(GFX::Shader* shader);
+		void renderBlur(GFX::Shader* shader, GFX::FBO* bufferIN);
 		void renderDownsample(GFX::Shader* shader);
 		void renderBloomAdvanced(GFX::Shader* shader);
 		void renderTonemapper(GFX::Texture* color_buffer);

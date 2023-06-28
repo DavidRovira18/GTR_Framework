@@ -1554,11 +1554,6 @@ void SCN::Renderer::captureReflection()
 				reflection_probes.push_back(p);
 
 			}
-	
-
-	
-
-
 }
 
 void SCN::Renderer::renderReflectionProbe(sReflectionProbe& probe)
@@ -1895,6 +1890,19 @@ void Renderer::showUI()
 					ImGui::TreePop();
 				}
 
+				if (ImGui::TreeNode("Lens Distortion"))
+				{
+					ImGui::Checkbox("Enable Distortion", &enable_lens_distortion);
+					if (enable_lens_distortion)
+					{
+						static int current = current_distortion;
+						ImGui::Combo("Type", &(int)current, "PINCUSHION\0BARREL\0");
+						if (current == 0) current_distortion = eDistortionType::PINCUSHION;
+						if (current == 1) current_distortion = eDistortionType::BARREL;
+						ImGui::SliderFloat("Distorion Intensity", &fx_distortion, 0.0, 5.0);
+					}
+					ImGui::TreePop();
+				}
 				if (ImGui::TreeNode("Motion Blur"))
 				{
 					ImGui::Checkbox("Enable Motion Blur", &enable_motion_blur);
@@ -1914,7 +1922,7 @@ void Renderer::showUI()
 						if (current == 1)
 						{
 							current_bloom = eBloomType::ADVANCED;
-							ImGui::SliderInt("Num iterations", &fx_downsample_iter, 1, 10);
+							ImGui::SliderInt("Downsample iterations", &fx_downsample_iter, 1, 10);
 						}
 					}
 					if (enable_blur)
@@ -2271,11 +2279,14 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 	if (enable_grain)
 		renderGrain(shader);
 
+	if (enable_lens_distortion)
+		renderLensDistortion(shader);
+
 	if (enable_motion_blur)
 		renderMotionBlur(shader, depth_buffer);
 
 	if (enable_blur)
-		renderBlur(shader);
+		renderBlur(shader, postFX_bufferIN);
 
 	if (enable_bloom)
 	{
@@ -2286,7 +2297,7 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 		
 		if (current_bloom == eBloomType::SIMPLE)
 		{
-			renderBlur(shader);
+			renderBlur(shader, postFX_bufferIN);
 
 			postFX_bufferIN->bind();
 				glEnable(GL_BLEND);
@@ -2349,6 +2360,21 @@ void SCN::Renderer::renderGrain(GFX::Shader* shader)
 	std::swap(postFX_bufferIN, postFX_bufferOUT);
 }
 
+void SCN::Renderer::renderLensDistortion(GFX::Shader* shader)
+{
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_lens_distortion");
+		shader->enable();
+		shader->setUniform("u_center", vec2(postFX_bufferIN->color_textures[0]->width/2, postFX_bufferIN->color_textures[0]->height/2));
+		shader->setUniform("u_iRes", vec2(1.0 / postFX_bufferIN->color_textures[0]->width, 1.0 / postFX_bufferIN->color_textures[0]->height));
+		shader->setUniform("u_type", (int)current_distortion);
+		shader->setUniform("u_distortion", fx_distortion);
+		postFX_bufferIN->color_textures[0]->toViewport();
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+}
+
 void SCN::Renderer::renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer)
 {
 	Camera* camera = Camera::current;
@@ -2367,30 +2393,30 @@ void SCN::Renderer::renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_bu
 	prev_view_proj = camera->viewprojection_matrix;
 }
 
-void SCN::Renderer::renderBlur(GFX::Shader* shader)
+void SCN::Renderer::renderBlur(GFX::Shader* shader, GFX::FBO* bufferIN)
 {
 	int power = 1;
 	for (int i = 0; i < fx_blur_num_iter; ++i)
 	{
 		//Horizontal blur
 		postFX_bufferOUT->bind();
-		shader = GFX::Shader::Get("fx_blur");
-		shader->enable();
-		shader->setUniform("u_intensity", fx_blur_intensity);
-		shader->setUniform("u_offset", vec2(1.0f / postFX_bufferIN->color_textures[0]->width, 0.0) * (float)power);
-		postFX_bufferIN->color_textures[0]->toViewport(shader);
+			shader = GFX::Shader::Get("fx_blur");
+			shader->enable();
+			shader->setUniform("u_intensity", fx_blur_intensity);
+			shader->setUniform("u_offset", vec2(1.0f / bufferIN->color_textures[0]->width, 0.0) * (float)power);
+			bufferIN->color_textures[0]->toViewport(shader);
 		postFX_bufferOUT->unbind();
 
-		std::swap(postFX_bufferIN, postFX_bufferOUT);
+		std::swap(bufferIN, postFX_bufferOUT);
 
 		//Vertical blur
 		postFX_bufferOUT->bind();
-		shader->enable();
-		shader->setUniform("u_offset", vec2(0.0, 1.0f / postFX_bufferIN->color_textures[0]->height) * (float)power);
-		postFX_bufferIN->color_textures[0]->toViewport(shader);
+			shader->enable();
+			shader->setUniform("u_offset", vec2(0.0, 1.0f / bufferIN->color_textures[0]->height) * (float)power);
+			bufferIN->color_textures[0]->toViewport(shader);
 		postFX_bufferOUT->unbind();
 
-		std::swap(postFX_bufferIN, postFX_bufferOUT);
+		std::swap(bufferIN, postFX_bufferOUT);
 		power = power << 1;
 	}
 }
@@ -2404,6 +2430,8 @@ void SCN::Renderer::renderDownsample(GFX::Shader* shader)
 		width /= 2;
 		height /= 2;
 
+		if (height < 2 || width < 2)
+			break;
 		GFX::FBO* fbo = bloom_fbo[i];
 		if (!fbo|| CORE::BaseApplication::instance->window_resized)
 		{
@@ -2415,12 +2443,40 @@ void SCN::Renderer::renderDownsample(GFX::Shader* shader)
 		fbo->bind();
 			postFX_bufferIN->color_textures[0]->toViewport();
 		fbo->unbind();
+
+		std::swap(postFX_bufferIN, postFX_bufferOUT);
+
 	}
 }
 
 void SCN::Renderer::renderBloomAdvanced(GFX::Shader* shader)
 {
+	//DOWNSAMPLE THE IMAGE
 	renderDownsample(shader);
+	
+	for (int i = 0; i < fx_downsample_iter; ++i)
+	{
+		//BLUR THE DOWNSAMPLED IMAGES
+		renderBlur(shader, bloom_fbo[i]);
+	}
+
+	postFX_bufferOUT->bind();
+		
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		//FROM THE SMALLEST TO THE GREATEST UPSAMPLE ADDING THEM
+		for (int i = fx_downsample_iter; i > 0; --i)
+		{
+			bloom_fbo[i-1]->color_textures[0]->toViewport();
+		}
+
+		//RENDER THE SCENE ADDED TO THE PREVIOUS ONES
+		postFX_bufferIN->color_textures[0]->toViewport();
+	postFX_bufferOUT->unbind();
+	glDisable(GL_BLEND);
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+
 }
 
 void SCN::Renderer::renderTonemapper(GFX::Texture* color_buffer)

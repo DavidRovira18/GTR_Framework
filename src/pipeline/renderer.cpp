@@ -1887,7 +1887,11 @@ void Renderer::showUI()
 						static int current = current_bloom;
 						ImGui::Combo("Type", &(int)current, "SIMPLE\0ADVANCED\0");
 						if (current == 0) current_bloom = eBloomType::SIMPLE;
-						if (current == 1) current_bloom = eBloomType::ADVANCED;
+						if (current == 1)
+						{
+							current_bloom = eBloomType::ADVANCED;
+							ImGui::SliderInt("Num iterations", &fx_downsample_iter, 1, 10);
+						}
 					}
 					if (enable_blur)
 						enable_bloom = false;
@@ -2268,6 +2272,10 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 			glDisable(GL_BLEND);
 		}
 
+		else
+		{
+			renderBloomAdvanced(shader);
+		}
 	}
 
 	if (enable_tonemapper)
@@ -2361,6 +2369,30 @@ void SCN::Renderer::renderBlur(GFX::Shader* shader)
 		std::swap(postFX_bufferIN, postFX_bufferOUT);
 		power = power << 1;
 	}
+}
+
+void SCN::Renderer::renderDownsample(GFX::Shader* shader)
+{
+	bloom_textures.clear();
+	float width = postFX_bufferIN->color_textures[0]->width;
+	float height = postFX_bufferIN->color_textures[0]->height;
+	for (int i = 1; i < fx_downsample_iter; ++i)
+	{
+		width /= 2;
+		height /= 2;
+		GFX::Texture* tex =  new GFX::Texture(width, height, GL_RGB, GL_HALF_FLOAT, false);
+
+		tex->bind();
+			postFX_bufferIN->color_textures[0]->toViewport();
+		tex->unbind();
+
+		bloom_textures.push_back(tex);
+	}
+}
+
+void SCN::Renderer::renderBloomAdvanced(GFX::Shader* shader)
+{
+	//renderDownsample(shader);
 }
 
 void SCN::Renderer::renderTonemapper(GFX::Texture* color_buffer)

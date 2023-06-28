@@ -41,6 +41,9 @@ decal basic.vs decal.fs
 
 //POSTFX
 fx_color_correction quad.vs fx_color_correction.fs
+fx_vigneting quad.vs fx_vigneting.fs
+fx_grain quad.vs fx_grain.fs
+fx_motion_blur quad.vs fx_motion_blur.fs
 fx_blur quad.vs fx_blur.fs
 
 gamma quad.vs gamma.fs
@@ -2422,6 +2425,8 @@ void main()
 
 uniform sampler2D u_texture; 
 uniform float u_brightness;
+uniform float u_contrast;
+uniform vec3 u_midtone;
 uniform float u_r_balance;
 uniform float u_g_balance;
 uniform float u_b_balance;
@@ -2433,13 +2438,104 @@ void main()
 {
 	vec4 color = texture(u_texture, v_uv);
 	
+	//Brightness
 	color.xyz *= u_brightness;
+
+	//Contrast
+	color.xyz = u_midtone + (color.xyz - u_midtone) * u_contrast;
 
 	//Color Balance
 	color.x *= u_r_balance;
 	color.y *= u_g_balance;
 	color.z *= u_b_balance;
 	
+	FragColor = color;
+}
+
+\fx_vigneting.fs
+#version 330 core
+
+uniform sampler2D u_texture;
+uniform float u_vigneting;
+
+in vec2 v_uv;
+out vec4 FragColor;
+
+void main()
+{
+	vec4 color = texture(u_texture, v_uv);
+
+	color *= 1.2 - length(v_uv - vec2(0.5)) * u_vigneting;
+	
+	FragColor = color;
+}
+
+\fx_grain.fs
+#version 330 core
+
+uniform sampler2D u_texture;
+uniform float u_grain;
+
+in vec2 v_uv;
+out vec4 FragColor;
+
+//random value from uv
+float rand(vec2 co)
+{
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+void main()
+{
+	vec4 color = texture(u_texture, v_uv);
+
+	float random = rand(v_uv) - 0.5; //-0.5 ... 0.5
+
+	vec3 grain = vec3(random) * u_grain;
+	
+	color.xyz += grain;
+	
+	FragColor = color;
+}
+
+\fx_motion_blur.fs
+#version 330 core
+
+in vec2 v_uv;
+out vec4 FragColor;
+	
+uniform sampler2D u_texture;
+uniform sampler2D u_depth_texture;
+
+uniform mat4 u_ivp;
+uniform vec2 u_iRes;
+uniform mat4 u_prev_vp;
+
+void main() 
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+	
+	float depth = texture(u_depth_texture, uv).r;
+
+	vec4 screen_coord = vec4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+	vec4 world_proj = u_ivp * screen_coord;
+
+	//Where the point is now
+	vec3 world_pos = world_proj.xyz / world_proj.w;
+
+	//Where it was in the prev frame
+	vec4 prev_screen_pos = u_prev_vp * vec4(world_pos, 1.0);
+	prev_screen_pos.xyz /= prev_screen_pos.w; // -1...1
+	vec2 prev_uv = prev_screen_pos.xy * 0.5 + vec2(0.5); // 0...1 
+	
+	vec4 color = vec4(0.0);
+	for(int i = 0; i < 16; ++i)
+	{
+		vec2 interpolated_uv = mix(uv, prev_uv, float(i)/16.0);
+		color += texture(u_texture, interpolated_uv);
+	}
+
+	color /= 16.0;
 	FragColor = color;
 }
 

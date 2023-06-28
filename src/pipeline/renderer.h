@@ -170,15 +170,36 @@ namespace SCN {
 			bool enable_color_correction = false;	
 
 			float fx_brightness = 1.0f;
+			float fx_contrast = 1.0f;
+			vec3 fx_midtone = vec3(0.5);
 			float fx_red_balance = 1.0f;
 			float fx_green_balance = 1.0f;
 			float fx_blue_balance = 1.0f;
+
+			//Vigneting
+			bool enable_vigneting = false;
+			float fx_vigneting = 1.0f;
+
+			//Grain
+			bool enable_grain = false;
+			float fx_grain = 1.0f;
+
+			//MotionBlur
+			bool enable_motion_blur = false;
+			Matrix44 prev_view_proj;
 
 			//Bloom
 			bool enable_blur = false;
 			bool enable_bloom = false;
 			float fx_blur_intensity = 1.0;
 			int fx_blur_num_iter = 1;
+			enum eBloomType {
+				SIMPLE,
+				ADVANCED
+			};
+			eBloomType current_bloom = eBloomType::SIMPLE;
+
+
 
 		//TONEMAPPER
 		bool enable_tonemapper;
@@ -287,6 +308,9 @@ namespace SCN {
 		//POSTFX
 		void renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth_buffer);
 		void renderColorCorrection(GFX::Shader* shader);
+		void renderVigneting(GFX::Shader* shader);
+		void renderGrain(GFX::Shader* shader);
+		void renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer);
 		void renderBlur(GFX::Shader* shader);
 		void renderTonemapper(GFX::Texture* color_buffer);
 		void renderGamma(GFX::Texture* color_buffer);

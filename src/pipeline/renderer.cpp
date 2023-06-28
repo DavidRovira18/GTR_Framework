@@ -354,11 +354,8 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 				computeIlluminationDeferred();
 			illumination_fbo->unbind();
 
-			renderPostFX(illumination_fbo->color_textures[0], illumination_fbo->depth_texture);
-		}
-
-
-		
+			renderPostFX(illumination_fbo->color_textures[0], gbuffers_fbo->depth_texture);
+		}	
 	}
 
 	if (show_volumetric) {
@@ -1709,9 +1706,8 @@ void Renderer::showUI()
 			current_shader = eShaders::sLIGHTS_MULTI;
 			if (ImGui::TreeNode("Available Shaders"))
 			{
-				const char* shaders[] = { "Multi", "Single", "PBR" };
 				static int shader_current = current_shader;
-				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 2);
+				ImGui::Combo("Shader", &shader_current, "MULTI\0SINGLE\0PBR\0");
 
 				if (shader_current == 0)
 				{
@@ -1775,9 +1771,8 @@ void Renderer::showUI()
 			current_shader = eShaders::sDEFERRED;
 			if (ImGui::TreeNode("Available shaders"))
 			{
-				const char* shaders[] = { "Phong", "PBR" };
 				static int shader_current = current_shader;
-				ImGui::Combo("Shader", &shader_current, shaders, IM_ARRAYSIZE(shaders), 2);
+				ImGui::Combo("Shader", &shader_current, "PHONG\0PBR\0");
 				if (shader_current == 0) current_shader = eShaders::sDEFERRED;
 				if (shader_current == 1) current_shader = eShaders::sDEFERRED_PBR;
 				ImGui::TreePop();
@@ -1851,10 +1846,34 @@ void Renderer::showUI()
 					if (enable_color_correction)
 					{
 						ImGui::SliderFloat("Brightness", &fx_brightness, 0.0, 5.0);
+						ImGui::SliderFloat("Contrast", &fx_contrast, 0.5, 1.5);
+						ImGui::SliderFloat3("Midtone", &fx_midtone.x, 0.0, 1.0);
 						ImGui::SliderFloat("Red Balance", &fx_red_balance, 0.0, 5.0);
 						ImGui::SliderFloat("Green Balance", &fx_green_balance, 0.0, 5.0);
 						ImGui::SliderFloat("Blue Balance", &fx_blue_balance, 0.0, 5.0);
 					}
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("Vigneting"))
+				{
+					ImGui::Checkbox("Enable Vigneting", &enable_vigneting);
+					if(enable_vigneting)
+						ImGui::SliderFloat("Vigneting", &fx_vigneting, 0.0, 5.0);
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("Grain"))
+				{
+					ImGui::Checkbox("Enable Grain", &enable_grain);
+					if (enable_grain)
+						ImGui::SliderFloat("Grain Intensity", &fx_grain, 0.0, 5.0);
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("Motion Blur"))
+				{
+					ImGui::Checkbox("Enable Motion Blur", &enable_motion_blur);
 					ImGui::TreePop();
 				}
 				if (ImGui::TreeNode("Bloom"))
@@ -1863,7 +1882,13 @@ void Renderer::showUI()
 					ImGui::Checkbox("Enable Bloom", &enable_bloom);
 					
 					if (enable_bloom)
+					{
 						enable_blur = false;
+						static int current = current_bloom;
+						ImGui::Combo("Type", &(int)current, "SIMPLE\0ADVANCED\0");
+						if (current == 0) current_bloom = eBloomType::SIMPLE;
+						if (current == 1) current_bloom = eBloomType::ADVANCED;
+					}
 					if (enable_blur)
 						enable_bloom = false;
 
@@ -2211,7 +2236,16 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 
 	if (enable_color_correction)
 		renderColorCorrection(shader);
-		
+	
+	if (enable_vigneting)
+		renderVigneting(shader);
+
+	if (enable_grain)
+		renderGrain(shader);
+
+	if (enable_motion_blur)
+		renderMotionBlur(shader, depth_buffer);
+
 	if (enable_blur)
 		renderBlur(shader);
 
@@ -2221,14 +2255,19 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 			postFX_bufferIN->color_textures[0]->toViewport();
 		postFX_bufferTEMP->unbind();
 
-		renderBlur(shader);
+		
+		if (current_bloom == eBloomType::SIMPLE)
+		{
+			renderBlur(shader);
 
-		postFX_bufferIN->bind();
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			postFX_bufferTEMP->color_textures[0]->toViewport();
-		postFX_bufferIN->unbind();
-		glDisable(GL_BLEND);
+			postFX_bufferIN->bind();
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+				postFX_bufferTEMP->color_textures[0]->toViewport();
+			postFX_bufferIN->unbind();
+			glDisable(GL_BLEND);
+		}
+
 	}
 
 	if (enable_tonemapper)
@@ -2243,6 +2282,8 @@ void SCN::Renderer::renderColorCorrection(GFX::Shader* shader)
 		shader = GFX::Shader::Get("fx_color_correction");
 		shader->enable();
 		shader->setUniform("u_brightness", fx_brightness);
+		shader->setUniform("u_contrast", fx_contrast);
+		shader->setVector3("u_midtone", fx_midtone);
 		shader->setUniform("u_r_balance", fx_red_balance);
 		shader->setUniform("u_g_balance", fx_green_balance);
 		shader->setUniform("u_b_balance", fx_blue_balance);
@@ -2250,6 +2291,48 @@ void SCN::Renderer::renderColorCorrection(GFX::Shader* shader)
 	postFX_bufferOUT->unbind();
 
 	std::swap(postFX_bufferIN, postFX_bufferOUT);
+}
+
+void SCN::Renderer::renderVigneting(GFX::Shader* shader)
+{
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_vigneting");
+		shader->enable();
+		shader->setUniform("u_vigneting", fx_vigneting);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+}
+
+void SCN::Renderer::renderGrain(GFX::Shader* shader)
+{
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_grain");
+		shader->enable();
+		shader->setUniform("u_grain", fx_grain);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+}
+
+void SCN::Renderer::renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer)
+{
+	Camera* camera = Camera::current;
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_motion_blur");
+		shader->enable();
+		shader->setUniform("u_depth_texture", depth_buffer, 1);
+		shader->setUniform("u_iRes", vec2(1.0 / postFX_bufferIN->color_textures[0]->width, 1.0 / postFX_bufferIN->color_textures[0]->height));
+		shader->setUniform("u_ivp", camera->inverse_viewprojection_matrix);
+		shader->setUniform("u_prev_vp", prev_view_proj);
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+
+	prev_view_proj = camera->viewprojection_matrix;
 }
 
 void SCN::Renderer::renderBlur(GFX::Shader* shader)

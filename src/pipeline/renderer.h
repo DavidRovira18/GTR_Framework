@@ -199,7 +199,8 @@ namespace SCN {
 			};
 			eBloomType current_bloom = eBloomType::SIMPLE;
 			int fx_downsample_iter = 4;
-			std::vector<GFX::Texture*>bloom_textures;
+			GFX::FBO* bloom_fbo[10] = { nullptr };
+
 
 		//TONEMAPPER
 		bool enable_tonemapper;

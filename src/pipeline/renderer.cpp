@@ -2373,26 +2373,30 @@ void SCN::Renderer::renderBlur(GFX::Shader* shader)
 
 void SCN::Renderer::renderDownsample(GFX::Shader* shader)
 {
-	bloom_textures.clear();
 	float width = postFX_bufferIN->color_textures[0]->width;
 	float height = postFX_bufferIN->color_textures[0]->height;
-	for (int i = 1; i < fx_downsample_iter; ++i)
+	for (int i = 0; i < fx_downsample_iter; ++i)
 	{
 		width /= 2;
 		height /= 2;
-		GFX::Texture* tex =  new GFX::Texture(width, height, GL_RGB, GL_HALF_FLOAT, false);
 
-		tex->bind();
+		GFX::FBO* fbo = bloom_fbo[i];
+		if (!fbo|| CORE::BaseApplication::instance->window_resized)
+		{
+			fbo = bloom_fbo[i] = new GFX::FBO();
+			fbo->create(width, height, 1, GL_RGB, GL_HALF_FLOAT, false);
+			CORE::BaseApplication::instance->window_resized = false;
+		}
+
+		fbo->bind();
 			postFX_bufferIN->color_textures[0]->toViewport();
-		tex->unbind();
-
-		bloom_textures.push_back(tex);
+		fbo->unbind();
 	}
 }
 
 void SCN::Renderer::renderBloomAdvanced(GFX::Shader* shader)
 {
-	//renderDownsample(shader);
+	renderDownsample(shader);
 }
 
 void SCN::Renderer::renderTonemapper(GFX::Texture* color_buffer)

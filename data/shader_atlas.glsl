@@ -618,8 +618,8 @@ void main()
 	if(albedo.a < u_alpha_cutoff)
 		discard;
 
-	if(v_world_position.y < 0.0)	//TODO: do it only for planer reflections with the floor
-		discard;	
+	//if(v_world_position.y < 0.0)	//TODO: do it only for planer reflections with the floor
+		//discard;	
 
 	vec3 light = vec3(0.0);
 	vec3 N = vec3(0.0);
@@ -713,6 +713,7 @@ void main()
 	emissive_light *= u_emissive_factor;
 	color += emissive_light;
 
+	//color = vec3(0.0);
 	
 	//environment reflections
 	if (u_enable_reflections)
@@ -739,19 +740,21 @@ void main()
 			// }
 
 			reflected_color = texture2D( u_planer_reflection_texture, uv ).xyz; // * fresnel;
+			color = reflected_color * color;
 		}
 		else
 		{
 			reflected_color = texture(u_environment, R).xyz;
 			reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
 
+			float fresnel = 1.0 - max(dot(N,-E), 0.0);
+			fresnel = pow(fresnel, 2.0);
+			float reflective_factor = fresnel * alpha * u_mat_properties.x;
+
+			color.xyz = mix( color.xyz, reflected_color, reflective_factor);
 		}
 	
-		float fresnel = 1.0 - max(dot(N,-E), 0.0);
-		fresnel = pow(fresnel, 2.0);
-		float reflective_factor = fresnel * alpha * u_mat_properties.x;
-
-		color.xyz = mix( color.xyz, reflected_color, reflective_factor);
+		
 	}
 	
 	FragColor = vec4(color, albedo.a);

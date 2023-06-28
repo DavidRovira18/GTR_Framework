@@ -259,7 +259,7 @@ void SCN::Renderer::setupRenderFrame()
 void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 {
 	
-	if (show_planer_reflection)
+	if (show_planer_reflection && current_shader == eShaders::sLIGHTS_MULTI)
 		capturePlanerReflection(camera);
 
 	
@@ -284,7 +284,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		}
 		
 		//planer reflection
-		if (show_planer_reflection)
+		if (show_planer_reflection && current_shader == eShaders::sLIGHTS_MULTI)
 			renderPlanerReflectionFBO(camera);
 		
 
@@ -648,6 +648,16 @@ void Renderer::renderMeshWithMaterialLight(RenderCall* rc)
 void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 {
 	glDepthFunc(GL_LEQUAL); //render if the z is the same or closer to the camera
+
+	//planer refelctions
+	bool has_planer_reflection = rc->material->planer_reflection && show_planer_reflection;
+	if (has_planer_reflection)
+	{
+		shader->setTexture("u_planer_reflection_texture", planer_reflection_fbo->color_textures[0], 5);
+		shader->setUniform("u_apply_fresnel", use_fresnel_planer_reflection);
+	}
+
+	shader->setUniform("u_planer_reflection", has_planer_reflection);
 
 	for (int i = 0; i < visible_lights.size(); ++i)
 	{
@@ -1189,17 +1199,7 @@ void SCN::Renderer::materialToShader(GFX::Shader* shader, SCN::Material* materia
 	shader->setTexture("u_emissive_texture", emissive_texture ? emissive_texture : white, 1);
 	shader->setTexture("u_metallic_roughness_texture", metallic_roughness_texture ? metallic_roughness_texture : white, 2);
 	shader->setUniform("u_mat_properties", vec2(material->metallic_factor, material->roughness_factor));
-
-	/*
-	bool has_planer_reflection = material->planer_reflection && show_planer_reflection;
-	if (has_planer_reflection)
-	{
-		shader->setTexture("u_planer_reflection_texture", planer_reflection_fbo->color_textures[0], 5);
-		shader->setUniform("u_apply_fresnel", use_fresnel_planer_reflection);
-	}
-
-	shader->setUniform("u_planer_reflection", has_planer_reflection);
-	*/
+	
 }
 
 void Renderer::renderTransparenciesForward()
@@ -1603,7 +1603,7 @@ void SCN::Renderer::capturePlanerReflection(Camera* camera)
 
 		setupRenderFrame();
 
-		renderByPriority();
+		renderByPriority(SCN::eRenderMode::FLAT);
 
 	planer_reflection_fbo->unbind();
 }

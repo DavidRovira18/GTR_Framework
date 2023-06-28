@@ -1938,7 +1938,8 @@ vec3 computeLight( vec3 pos )
 		attenuation *= (cos_angle - u_light_cone.y) / (u_light_cone.x - u_light_cone.y);
 		
 		
-		light *= attenuation * shadow_factor + u_ambient_light;
+		light *= attenuation * shadow_factor ;
+		light += + u_ambient_light;
 	}
 
 	return light;

@@ -93,14 +93,14 @@ namespace SCN {
 
 
 		//RENDERING MODE
-		eRenderMode current_mode = eRenderMode::DEFERRED;
+		eRenderMode current_mode = eRenderMode::LIGHTS;
 		eLightsRender current_lights_render = eLightsRender::MULTIPASS;
 		//RENDER CALLS AND PRIORITY
 		std::vector<RenderCall> render_calls;
 		std::vector<RenderCall> render_calls_opaque;
 		eRenderPriority current_priority = eRenderPriority::DISTANCE2CAMERA;
 		//SHADER
-		eShaders current_shader = eShaders::sDEFERRED;
+		eShaders current_shader = eShaders::sLIGHTS_MULTI;
 		//LIGHTS
 		std::vector<LightEntity*> lights;
 		std::vector<LightEntity*> visible_lights;

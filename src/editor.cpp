@@ -383,8 +383,11 @@ void SceneEditor::inspectEntity(SCN::LightEntity* entity)
 
 void SceneEditor::inspectEntity(SCN::DecalEntity* entity)
 {
+	this->inspectEntity((SCN::BaseEntity*)entity);
+
 	if (UI::Filename("filename", entity->filename, scene->base_folder))
 	{
+
 		
 	}
 }

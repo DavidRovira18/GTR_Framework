@@ -383,13 +383,17 @@ void SceneEditor::inspectEntity(SCN::LightEntity* entity)
 
 void SceneEditor::inspectEntity(SCN::DecalEntity* entity)
 {
-	this->inspectEntity((SCN::BaseEntity*)entity);
 
 	if (UI::Filename("filename", entity->filename, scene->base_folder))
 	{
-
-		
+				
 	}
+	this->inspectEntity((SCN::BaseEntity*)entity);
+
+
+	ImGui::SliderFloat("metalness", &entity->metalness, 0, 1);
+	ImGui::SliderFloat("roughness", &entity->roughness, 0, 1);
+
 }
 
 

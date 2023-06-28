@@ -306,7 +306,8 @@ bool SCN::PrefabEntity::testRay(const Ray& ray, Vector3f& coll, float max_dist)
 
 SCN::DecalEntity::DecalEntity()
 {
-
+	metalness = 0.0;
+	roughness = 0.0;
 }
 
 void SCN::DecalEntity::configure(cJSON* json)

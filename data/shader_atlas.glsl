@@ -2007,6 +2007,11 @@ void main()
 
 uniform sampler2D u_depth_texture;
 uniform sampler2D u_color_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_extra_texture;
+
+uniform float u_roughness;
+uniform float u_metalness;
 
 uniform mat4 u_ivp;
 uniform mat4 u_imodel;
@@ -2043,8 +2048,13 @@ void main()
 	vec4 color = texture(u_color_texture, decal_space.xy);
 
 	FragColor = color;
-	NormalColor = vec4(0.0);
-	ExtraColor = vec4(0.0);
+	//FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+	vec3 normal = texture(u_normal_texture, uv).rgb;
+	vec3 extra = texture(u_extra_texture, uv).rgb;
+
+	NormalColor = vec4(normal, u_metalness);  //TODO: store metallness
+	ExtraColor = vec4(extra, u_roughness);	//TODO: store roughness
 }
 
 \gamma.fs

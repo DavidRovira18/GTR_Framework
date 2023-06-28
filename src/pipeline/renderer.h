@@ -200,8 +200,8 @@ namespace SCN {
 				ADVANCED
 			};
 			eBloomType current_bloom = eBloomType::SIMPLE;
-
-
+			int fx_downsample_iter = 4;
+			std::vector<GFX::Texture*>bloom_textures;
 
 		//TONEMAPPER
 		bool enable_tonemapper;
@@ -314,6 +314,8 @@ namespace SCN {
 		void renderGrain(GFX::Shader* shader);
 		void renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer);
 		void renderBlur(GFX::Shader* shader);
+		void renderDownsample(GFX::Shader* shader);
+		void renderBloomAdvanced(GFX::Shader* shader);
 		void renderTonemapper(GFX::Texture* color_buffer);
 		void renderGamma(GFX::Texture* color_buffer);
 	};

@@ -574,6 +574,7 @@ void SceneEditor::inspectObject(SCN::Material* material)
 #ifndef SKIP_IMGUI
 	ImGui::Text("Name: %s", material->name.c_str()); // Show String
 	ImGui::Checkbox("Two sided", &material->two_sided);
+	ImGui::Checkbox("Planer Reflection", &material->planer_reflection);
 	ImGui::Combo("AlphaMode", (int*)&material->alpha_mode, "NO_ALPHA\0MASK\0BLEND", 3);
 	ImGui::SliderFloat("Alpha Cutoff", &material->alpha_cutoff, 0.0f, 1.0f);
 	ImGui::ColorEdit4("Color", material->color.v); // Edit 4 floats representing a color + alpha

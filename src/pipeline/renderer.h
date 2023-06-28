@@ -108,6 +108,8 @@ namespace SCN {
 		//DEFERRED FBOs
 		GFX::FBO* gbuffers_fbo = nullptr;
 		GFX::Texture* depth_buffer_clone = nullptr;		//for decals
+		GFX::Texture* normal_buffer_clone = nullptr;		//for decals
+		GFX::Texture* extra_buffer_clone = nullptr;		//for decals
 		GFX::FBO* illumination_fbo = nullptr;
 
 		//SSAO

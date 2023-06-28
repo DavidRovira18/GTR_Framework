@@ -318,6 +318,9 @@ void SCN::Renderer::renderFrameDeferred(SCN::Scene* scene, Camera* camera)
 	if (decals.size())
 	{
 		gbuffers_fbo->depth_texture->copyTo(depth_buffer_clone);
+		gbuffers_fbo->color_textures[1]->copyTo(normal_buffer_clone);
+		gbuffers_fbo->color_textures[2]->copyTo(extra_buffer_clone);
+
 
 		gbuffers_fbo->bind();
 			camera->enable();
@@ -1000,20 +1003,32 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		gbuffers_fbo = new GFX::FBO();
 		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
-		CORE::BaseApplication::instance->window_resized = false;	//TODO: check that if it is set to false the other fbos won't be recomputed, no?
+		//CORE::BaseApplication::instance->window_resized = false;	//TODO: check that if it is set to false the other fbos won't be recomputed, no?
 	}
 
 	if (!depth_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
 	{
 		depth_buffer_clone = new GFX::Texture(size.x, size.y, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
-		CORE::BaseApplication::instance->window_resized = false;
+		//CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	if (!normal_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
+	{
+		normal_buffer_clone = new GFX::Texture(size.x, size.y, GL_RGB, GL_UNSIGNED_INT);
+		//CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	if (!extra_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
+	{
+		extra_buffer_clone = new GFX::Texture(size.x, size.y, GL_RGB, GL_UNSIGNED_INT);
+		//CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!ssao_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		ssao_fbo = new GFX::FBO();
 		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
-		CORE::BaseApplication::instance->window_resized = false;
+		//CORE::BaseApplication::instance->window_resized = false;
 
 	}
 
@@ -1021,7 +1036,7 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		volumetric_fbo = new GFX::FBO();
 		volumetric_fbo->create(size.x/2, size.y/2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
-		CORE::BaseApplication::instance->window_resized = false;
+		//CORE::BaseApplication::instance->window_resized = false;
 
 	}
 
@@ -1029,9 +1044,12 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		deferred_reflections_fbo = new GFX::FBO();
 		deferred_reflections_fbo->create(size.x / 2, size.y / 2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);		//TODO: check parameters
-		CORE::BaseApplication::instance->window_resized = false;
+		//CORE::BaseApplication::instance->window_resized = false;
 
 	}
+
+	CORE::BaseApplication::instance->window_resized = false;	
+
 }
 
 void SCN::Renderer::createDecals(Camera* camera)
@@ -1039,8 +1057,8 @@ void SCN::Renderer::createDecals(Camera* camera)
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(false);
 	glDepthFunc(GL_GREATER);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);		//Remove to use metalness and roughness
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //Remove to use metalness and roughness
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
 
@@ -1049,6 +1067,9 @@ void SCN::Renderer::createDecals(Camera* camera)
 	shader->enable();
 	cameraToShader(camera, shader);
 	shader->setTexture("u_depth_texture", depth_buffer_clone, 4);
+	shader->setTexture("u_normal_texture", normal_buffer_clone, 5);
+	shader->setTexture("u_extra_texture", extra_buffer_clone, 6);
+
 	shader->setUniform("u_ivp", camera->inverse_viewprojection_matrix);
 	shader->setUniform("u_iRes", vec2(1.0 / gbuffers_fbo->color_textures[0]->width, 1.0 / gbuffers_fbo->color_textures[1]->height));
 
@@ -1063,6 +1084,9 @@ void SCN::Renderer::createDecals(Camera* camera)
 		imodel.inverse();
 		shader->setUniform("u_imodel", imodel);
 		shader->setTexture("u_color_texture", texture, 1);
+		shader->setUniform("u_metalness", decal->metalness);
+		shader->setUniform("u_roughness", decal->roughness);
+
 		box.render(GL_TRIANGLES);
 	}
 	glDisable(GL_DEPTH_TEST);

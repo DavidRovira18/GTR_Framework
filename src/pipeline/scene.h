@@ -114,6 +114,8 @@ namespace SCN {
 	{
 	public:
 		std::string filename;
+		float metalness;
+		float roughness;
 
 		DecalEntity();
 

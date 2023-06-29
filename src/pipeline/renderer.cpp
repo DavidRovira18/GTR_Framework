@@ -260,7 +260,7 @@ void SCN::Renderer::setupRenderFrame()
 void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 {
 	
-	if (show_planer_reflection && current_shader == eShaders::sLIGHTS_MULTI)
+	if ( (show_mirror || show_planer_reflection) && current_shader == eShaders::sLIGHTS_MULTI)
 		capturePlanerReflection(camera);
 
 	
@@ -285,7 +285,7 @@ void Renderer::renderFrameForward(SCN::Scene* scene, Camera* camera)
 		}
 		
 		//planer reflection
-		if (show_planer_reflection && current_shader == eShaders::sLIGHTS_MULTI)
+		if (show_mirror && current_shader == eShaders::sLIGHTS_MULTI)
 			renderPlanerReflectionFBO(camera);
 		
 
@@ -1593,6 +1593,12 @@ void SCN::Renderer::capturePlanerReflection(Camera* camera)
 		planer_reflection_fbo->create(size.x, size.y, 1, GL_RGBA, GL_FLOAT);
 	}
 
+	if (!mirror_reflection_fbo)		//TODO: put it somewhere else ?
+	{
+		mirror_reflection_fbo = new GFX::FBO();
+		mirror_reflection_fbo->create(size.x, size.y, 1, GL_RGBA, GL_FLOAT);
+	}
+
 	simetric_camera = *camera;
 	vec3 pos = camera->eye;
 	pos.y *= -1;
@@ -1602,16 +1608,31 @@ void SCN::Renderer::capturePlanerReflection(Camera* camera)
 
 	simetric_camera.enable();
 
-	planer_reflection_fbo->bind();
+	if (show_planer_reflection)
+	{
+		planer_reflection_fbo->bind();
 		
-		glDisable(GL_BLEND);
-		glEnable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
 
-		setupRenderFrame();
+			setupRenderFrame();
 
-		renderByPriority(SCN::eRenderMode::FLAT);
+			renderByPriority(SCN::eRenderMode::FLAT);
 
-	planer_reflection_fbo->unbind();
+		planer_reflection_fbo->unbind();
+	}
+
+	if (show_mirror) {
+		mirror_reflection_fbo->bind();
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+
+			setupRenderFrame();
+
+			renderByPriority();
+		mirror_reflection_fbo->unbind();
+	}
+	
 }
 
 void SCN::Renderer::renderPlanerReflectionFBO(Camera* camera)
@@ -1620,7 +1641,7 @@ void SCN::Renderer::renderPlanerReflectionFBO(Camera* camera)
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
-	GFX::Texture* reflection = planer_reflection_fbo->color_textures[0];
+	GFX::Texture* reflection = mirror_reflection_fbo->color_textures[0];
 
 	GFX::Shader* shader = GFX::Shader::Get("mirror");
 	shader->enable();
@@ -1765,6 +1786,15 @@ void Renderer::showUI()
 					ImGui::TreePop();
 				}
 
+				if (ImGui::TreeNode("Mirror Reflections"))
+				{
+					//ImGui::Checkbox("Show planer reflection ", &show_planer_reflection);
+					ImGui::Checkbox("Show mirror reflection", &show_mirror);
+					ImGui::Checkbox("Enable fresnel", &use_fresnel_planer_reflection);
+
+					ImGui::TreePop();
+				}
+
 				if (ImGui::TreeNode("Planer Reflections"))
 				{
 					ImGui::Checkbox("Show planer reflection ", &show_planer_reflection);
@@ -1772,6 +1802,7 @@ void Renderer::showUI()
 
 					ImGui::TreePop();
 				}
+
 			}
 		}
 		if (mode_current == 2)
@@ -1930,7 +1961,7 @@ void Renderer::showUI()
 						if (current == 1)
 						{
 							current_bloom = eBloomType::ADVANCED;
-							ImGui::SliderInt("Downsample iterations", &fx_downsample_iter, 1, 10);
+							ImGui::SliderInt("Downsample iterations", &fx_downsample_iter, 1, 8);
 						}
 					}
 					if (enable_blur)

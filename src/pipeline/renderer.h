@@ -135,14 +135,16 @@ namespace SCN {
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;
 		GFX::FBO* planer_reflection_fbo = nullptr;
+		GFX::FBO* mirror_reflection_fbo = nullptr;
 		std::vector<sReflectionProbe> reflection_probes;
 		bool show_reflection_probes = false;
 		bool capture_reflectance = false;
 		bool show_planer_reflection = false;
+		bool show_mirror = false;
 		bool use_fresnel_planer_reflection = false;
 		GFX::FBO* deferred_reflections_fbo = nullptr;
 		bool show_reflection_fbo = false;
-		
+
 		bool show_buffers = false;
 		bool show_globalpos = false;
 		bool enable_dithering = true;

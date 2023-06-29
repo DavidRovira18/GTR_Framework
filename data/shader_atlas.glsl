@@ -724,44 +724,47 @@ void main()
 	//color = vec3(0.0);
 	
 	//environment reflections
+	
 	if (u_enable_reflections)
 	{
 		vec3 E = normalize(v_world_position - u_camera_position);
 		R = (reflect(E, N));
-		
-		vec3 reflected_color;
 
-		if(u_planer_reflection)
-		{
-			vec2 uv = gl_FragCoord.xy * u_iRes;
-			uv.x = 1.0 - uv.x;
+		vec3 reflected_color = texture(u_environment, R).xyz;
+		//reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
 
-			//vec3 N = normalize( v_normal );
-			//vec3 E = normalize(v_world_position - u_camera_position);
-			//vec3 R = reflect( E, N );
+		float fresnel = 1.0 - max(dot(N,-E), 0.0);
+		fresnel = pow(fresnel, 2.0);
+		float reflective_factor = fresnel * alpha * u_mat_properties.x;
 
-			// float fresnel = 1;
-
-			// if(u_apply_fresnel)
-			// {
-			//	fresnel = pow(1.0 - max(0.0, dot(-E, N)), 2.0);
-			// }
-
-			reflected_color = texture2D( u_planer_reflection_texture, uv ).xyz; // * fresnel;
-			color = reflected_color;
-		}
-		else
-		{
-			reflected_color = texture(u_environment, R).xyz;
-			//reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
-
-			float fresnel = 1.0 - max(dot(N,-E), 0.0);
-			fresnel = pow(fresnel, 2.0);
-			float reflective_factor = fresnel * alpha * u_mat_properties.x;
-
-			color.xyz = mix( color.xyz, reflected_color, reflective_factor);
-		}	
+		color.xyz = mix( color.xyz, reflected_color, reflective_factor);
+			
 	}
+
+	if(u_planer_reflection)
+	{
+
+		vec3 E = normalize(v_world_position - u_camera_position);
+		R = (reflect(E, N));
+
+		vec2 uv = gl_FragCoord.xy * u_iRes;
+		uv.x = 1.0 - uv.x;
+
+		//vec3 N = normalize( v_normal );
+		//vec3 E = normalize(v_world_position - u_camera_position);
+		//vec3 R = reflect( E, N );
+
+		// float fresnel = 1;
+
+		// if(u_apply_fresnel)
+		// {
+		//	fresnel = pow(1.0 - max(0.0, dot(-E, N)), 2.0);
+		// }
+
+		vec3 reflected_color = texture2D( u_planer_reflection_texture, uv ).xyz; // * fresnel;
+		color = reflected_color;
+	}
+
 	
 	FragColor = vec4(color, albedo.a);
 }

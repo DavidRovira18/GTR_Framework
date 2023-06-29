@@ -190,7 +190,8 @@ namespace SCN {
 			bool enable_lens_distortion = false;
 			enum eDistortionType {
 				PINCUSHION,
-				BARREL
+				BARREL,
+				CHROMATIC
 			};
 			eDistortionType current_distortion = eDistortionType::PINCUSHION;
 			float fx_distortion = 1.0f;
@@ -199,6 +200,14 @@ namespace SCN {
 			bool enable_motion_blur = false;
 			Matrix44 prev_view_proj;
 
+			//DoF
+			bool enable_DoF = false;
+			GFX::FBO* dof_fbo = nullptr;
+			float fx_focal_distance = 30.0f;
+			float fx_dof_min = 1.0f;
+			float fx_dof_max = 3.0f;
+
+			GFX::FBO* TEMP = nullptr;
 			//Bloom
 			bool enable_blur = false;
 			bool enable_bloom = false;
@@ -324,6 +333,7 @@ namespace SCN {
 		void renderGrain(GFX::Shader* shader);
 		void renderLensDistortion(GFX::Shader* shader);
 		void renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_buffer);
+		void renderDoF(GFX::Shader* shader, GFX::Texture* depth_buffer);
 		void renderBlur(GFX::Shader* shader, GFX::FBO* bufferIN);
 		void renderDownsample(GFX::Shader* shader);
 		void renderBloomAdvanced(GFX::Shader* shader);

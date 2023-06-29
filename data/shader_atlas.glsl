@@ -44,7 +44,9 @@ fx_color_correction quad.vs fx_color_correction.fs
 fx_vigneting quad.vs fx_vigneting.fs
 fx_grain quad.vs fx_grain.fs
 fx_lens_distortion quad.vs fx_lens_distortion.fs
+fx_lens_chromatic quad.vs fx_lens_chromatic.fs
 fx_motion_blur quad.vs fx_motion_blur.fs
+fx_dof quad.vs fx_dof.fs
 fx_blur quad.vs fx_blur.fs
 
 gamma quad.vs gamma.fs
@@ -594,6 +596,7 @@ uniform bool u_planer_reflection;
 
 uniform samplerCube u_environment;
 uniform bool u_enable_reflections;
+uniform vec2 u_iRes;
 
 //global properties
 
@@ -729,7 +732,7 @@ void main()
 
 		if(u_planer_reflection)
 		{
-			//vec2 uv = gl_FragCoord.xy * u_iRes;
+			vec2 uv = gl_FragCoord.xy * u_iRes;
 			uv.x = 1.0 - uv.x;
 
 			//vec3 N = normalize( v_normal );
@@ -744,21 +747,19 @@ void main()
 			// }
 
 			reflected_color = texture2D( u_planer_reflection_texture, uv ).xyz; // * fresnel;
-			color = reflected_color * color;
+			color = reflected_color;
 		}
 		else
 		{
 			reflected_color = texture(u_environment, R).xyz;
-			reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
+			//reflected_color.xyz = pow(reflected_color.xyz, vec3(2.2));
 
 			float fresnel = 1.0 - max(dot(N,-E), 0.0);
 			fresnel = pow(fresnel, 2.0);
 			float reflective_factor = fresnel * alpha * u_mat_properties.x;
 
 			color.xyz = mix( color.xyz, reflected_color, reflective_factor);
-		}
-	
-		
+		}	
 	}
 	
 	FragColor = vec4(color, albedo.a);
@@ -2372,7 +2373,8 @@ void main()
 		fresnel = pow(1.0 - max(0.0, dot(-E, N)), 2.0);
 	}
 
-	vec4 color = texture2D( u_texture, uv ) * fresnel;	FragColor = color;
+	vec4 color = texture2D( u_texture, uv ) * fresnel;	
+	FragColor = color;
 }
 
 
@@ -2552,6 +2554,65 @@ void main()
 	FragColor = color;
 }
 
+\fx_lens_chromatic.fs
+#version 330 core
+
+uniform sampler2D u_texture;
+uniform vec2 u_resolution;
+
+in vec2 v_uv;
+out vec4 FragColor;
+
+vec2 barrelDistortion(vec2 coord, float amt) {
+	vec2 cc = coord - 0.5;
+	float dist = dot(cc, cc);
+	return coord + cc * dist * amt;
+}
+
+float sat( float t )
+{
+	return clamp( t, 0.0, 1.0 );
+}
+
+float linterp( float t ) {
+	return sat( 1.0 - abs( 2.0*t - 1.0 ) );
+}
+
+float remap( float t, float a, float b ) {
+	return sat( (t - a) / (b - a) );
+}
+
+vec4 spectrum_offset( float t ) {
+	vec4 ret;
+	float lo = step(t,0.5);
+	float hi = 1.0-lo;
+	float w = linterp( remap( t, 1.0/6.0, 5.0/6.0 ) );
+	ret = vec4(lo,1.0,hi, 1.) * vec4(1.0-w, w, 1.0-w, 1.);
+
+	return pow( ret, vec4(1.0/2.2) );
+}
+
+const float max_distort = 2.2;
+const int num_iter = 12;
+const float reci_num_iter_f = 1.0 / float(num_iter);
+
+void main()
+{	
+	vec2 uv=(gl_FragCoord.xy/u_resolution.xy*.5)+.25;
+
+	vec4 sumcol = vec4(0.0);
+	vec4 sumw = vec4(0.0);	
+	for ( int i=0; i<num_iter;++i )
+	{
+		float t = float(i) * reci_num_iter_f;
+		vec4 w = spectrum_offset( t );
+		sumw += w;
+		sumcol += w * texture( u_texture, barrelDistortion(uv, .6 * max_distort*t ) );
+	}
+		
+	FragColor = sumcol / sumw;
+}
+
 \fx_motion_blur.fs
 #version 330 core
 
@@ -2593,6 +2654,38 @@ void main()
 	FragColor = color;
 }
 
+\fx_dof.fs
+#version 330 core
+in vec2 v_uv;
+out vec4 FragColor;
+	
+uniform sampler2D u_texture;
+uniform sampler2D u_outFocus_texture;
+uniform sampler2D u_depth_texture;
+uniform float u_focal_distance;
+uniform float u_min_distance;
+uniform float u_max_distance;
+uniform vec2 u_camera_nearfar;
+uniform vec2 u_iRes;
+
+void main() 
+{
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+	
+	float depth = texture(u_depth_texture, v_uv).r;
+
+	float n = u_camera_nearfar.x;
+	float f = u_camera_nearfar.y;
+	depth = n * (depth + 1.0) / (f + n - depth * (f - n));
+
+	vec4 color = texture(u_texture, v_uv);
+	vec4 out_focus = texture(u_outFocus_texture, v_uv);
+
+	float blur = smoothstep(u_min_distance, u_max_distance, abs(depth - u_focal_distance));
+
+	FragColor = mix(color, out_focus, blur);
+	//FragColor = vec4(depth);
+}
 \fx_blur.fs
 #version 330 core
 

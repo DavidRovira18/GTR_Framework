@@ -112,7 +112,6 @@ void Renderer::setupScene(Camera* camera)
 	{
 		illumination_fbo = new GFX::FBO();
 		illumination_fbo->create(size.x, size.y, 3, GL_RGB, GL_HALF_FLOAT, false);
-		CORE::BaseApplication::instance->window_resized = false;
 	}
 
 }
@@ -242,6 +241,8 @@ void Renderer::renderScene(SCN::Scene* scene, Camera* camera)
 
 	if (show_shadowmaps)
 		renderShadowmaps();
+
+	CORE::BaseApplication::instance->window_resized = false;
 }
 
 void SCN::Renderer::setupRenderFrame()
@@ -653,8 +654,10 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 	bool has_planer_reflection = rc->material->planer_reflection && show_planer_reflection;
 	if (has_planer_reflection)
 	{
+		vec2 size = CORE::getWindowSize();
 		shader->setTexture("u_planer_reflection_texture", planer_reflection_fbo->color_textures[0], 5);
 		shader->setUniform("u_apply_fresnel", use_fresnel_planer_reflection);
+		shader->setUniform("u_iRes", vec2(1.0 / size.x, 1.0 / size.y));
 	}
 
 	shader->setUniform("u_planer_reflection", has_planer_reflection);
@@ -672,7 +675,6 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 
 		if(!capture_reflectance)
 			shader->setTexture("u_environment", (enviorment) ? enviorment->cubemap : skybox_cubemap, 9);
-		
 		
 		shader->setUniform("u_enable_reflections", capture_reflectance ? false : enable_reflections);
 		//do the draw call that renders the mesh into the screen
@@ -1003,53 +1005,40 @@ void SCN::Renderer::initDeferredFBOs()
 	{
 		gbuffers_fbo = new GFX::FBO();
 		gbuffers_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, true);
-		//CORE::BaseApplication::instance->window_resized = false;	//TODO: check that if it is set to false the other fbos won't be recomputed, no?
 	}
 
 	if (!depth_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
 	{
 		depth_buffer_clone = new GFX::Texture(size.x, size.y, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT);
-		//CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!normal_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
 	{
 		normal_buffer_clone = new GFX::Texture(size.x, size.y, GL_RGB, GL_UNSIGNED_INT);
-		//CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!extra_buffer_clone || CORE::BaseApplication::instance->window_resized) //WE WILL GENERETE BUFFERS IF NOT EXIST OR WINDOW IS RESIZED
 	{
 		extra_buffer_clone = new GFX::Texture(size.x, size.y, GL_RGB, GL_UNSIGNED_INT);
-		//CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!ssao_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		ssao_fbo = new GFX::FBO();
 		ssao_fbo->create(size.x, size.y, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	//TODO: is better if we use half of the resolution -> change size
-		//CORE::BaseApplication::instance->window_resized = false;
-
 	}
 
 	if (!volumetric_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		volumetric_fbo = new GFX::FBO();
 		volumetric_fbo->create(size.x/2, size.y/2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);	
-		//CORE::BaseApplication::instance->window_resized = false;
-
 	}
 
 	if (!deferred_reflections_fbo || CORE::BaseApplication::instance->window_resized)
 	{
 		deferred_reflections_fbo = new GFX::FBO();
 		deferred_reflections_fbo->create(size.x / 2, size.y / 2, 3, GL_RGBA, GL_UNSIGNED_BYTE, false);		//TODO: check parameters
-		//CORE::BaseApplication::instance->window_resized = false;
-
 	}
-
-	CORE::BaseApplication::instance->window_resized = false;	
-
 }
 
 void SCN::Renderer::createDecals(Camera* camera)
@@ -1896,16 +1885,29 @@ void Renderer::showUI()
 					if (enable_lens_distortion)
 					{
 						static int current = current_distortion;
-						ImGui::Combo("Type", &(int)current, "PINCUSHION\0BARREL\0");
+						ImGui::Combo("Type", &(int)current, "PINCUSHION\0BARREL\0CHROMATIC\0");
 						if (current == 0) current_distortion = eDistortionType::PINCUSHION;
 						if (current == 1) current_distortion = eDistortionType::BARREL;
-						ImGui::SliderFloat("Distorion Intensity", &fx_distortion, 0.0, 5.0);
+						if (current == 2) current_distortion = eDistortionType::CHROMATIC;
+						if (current_distortion != eDistortionType::CHROMATIC) ImGui::SliderFloat("Distorion Intensity", &fx_distortion, 0.0, 5.0);
 					}
 					ImGui::TreePop();
 				}
 				if (ImGui::TreeNode("Motion Blur"))
 				{
 					ImGui::Checkbox("Enable Motion Blur", &enable_motion_blur);
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("Depth of Field"))
+				{
+					ImGui::Checkbox("Enable DoF", &enable_DoF);
+					if (enable_DoF)
+					{
+						ImGui::SliderFloat("DoF Focus", &fx_focal_distance, 0.0, 1.0);
+						ImGui::SliderFloat("DoF Min", &fx_dof_min, 0.0, 1.0);
+						ImGui::SliderFloat("DoF Max", &fx_dof_max, 0.0, 1.0);
+					}
 					ImGui::TreePop();
 				}
 				if (ImGui::TreeNode("Bloom"))
@@ -2248,21 +2250,24 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 	{
 		postFX_bufferIN = new GFX::FBO();
 		postFX_bufferIN->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
-		CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!postFX_bufferOUT || CORE::BaseApplication::instance->window_resized)
 	{
 		postFX_bufferOUT = new GFX::FBO();
 		postFX_bufferOUT->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
-		CORE::BaseApplication::instance->window_resized = false;
 	}
 
 	if (!postFX_bufferTEMP || CORE::BaseApplication::instance->window_resized)
 	{
 		postFX_bufferTEMP = new GFX::FBO();
 		postFX_bufferTEMP->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
-		CORE::BaseApplication::instance->window_resized = false;
+	}
+
+	if (!TEMP || CORE::BaseApplication::instance->window_resized)
+	{
+		TEMP = new GFX::FBO();
+		TEMP->create(color_buffer->width, color_buffer->height, 1, GL_RGB, GL_HALF_FLOAT);
 	}
 
 	GFX::Shader* shader = nullptr;
@@ -2284,6 +2289,9 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 
 	if (enable_motion_blur)
 		renderMotionBlur(shader, depth_buffer);
+
+	if (enable_DoF)
+		renderDoF(shader, depth_buffer);
 
 	if (enable_blur)
 		renderBlur(shader, postFX_bufferIN);
@@ -2363,13 +2371,24 @@ void SCN::Renderer::renderGrain(GFX::Shader* shader)
 void SCN::Renderer::renderLensDistortion(GFX::Shader* shader)
 {
 	postFX_bufferOUT->bind();
-		shader = GFX::Shader::Get("fx_lens_distortion");
-		shader->enable();
-		shader->setUniform("u_center", vec2(postFX_bufferIN->color_textures[0]->width/2, postFX_bufferIN->color_textures[0]->height/2));
-		shader->setUniform("u_iRes", vec2(1.0 / postFX_bufferIN->color_textures[0]->width, 1.0 / postFX_bufferIN->color_textures[0]->height));
-		shader->setUniform("u_type", (int)current_distortion);
-		shader->setUniform("u_distortion", fx_distortion);
-		postFX_bufferIN->color_textures[0]->toViewport();
+		float width = postFX_bufferIN->color_textures[0]->width;
+		float height = postFX_bufferIN->color_textures[0]->height;
+		if (current_distortion != eDistortionType::CHROMATIC)
+		{
+			shader = GFX::Shader::Get("fx_lens_distortion");
+			shader->enable();
+			shader->setUniform("u_center", vec2((width/2)/width, (height/2)/height));
+			shader->setUniform("u_iRes", vec2(1.0 / width, 1.0 / height));
+			shader->setUniform("u_type", (int)current_distortion);
+			shader->setUniform("u_distortion", fx_distortion);
+		}
+		else 
+		{
+			shader = GFX::Shader::Get("fx_lens_chromatic");
+			shader->enable();
+			shader->setUniform("u_resolution", vec2(width, height));
+		}
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
 	postFX_bufferOUT->unbind();
 
 	std::swap(postFX_bufferIN, postFX_bufferOUT);
@@ -2391,6 +2410,41 @@ void SCN::Renderer::renderMotionBlur(GFX::Shader* shader, GFX::Texture* depth_bu
 	std::swap(postFX_bufferIN, postFX_bufferOUT);
 
 	prev_view_proj = camera->viewprojection_matrix;
+}
+
+void SCN::Renderer::renderDoF(GFX::Shader* shader, GFX::Texture* depth_buffer)
+{
+	float width = postFX_bufferIN->color_textures[0]->width;
+	float height = postFX_bufferIN->color_textures[0]->height;
+	if (!dof_fbo || CORE::BaseApplication::instance->window_resized)
+	{
+		dof_fbo = new GFX::FBO();
+		dof_fbo->create(width, height, 1, GL_RGB, GL_HALF_FLOAT, false);
+	}
+
+	dof_fbo->bind();
+		postFX_bufferIN->color_textures[0]->toViewport();
+	dof_fbo->unbind();
+
+	//BLUR THE IMAGE
+	fx_blur_intensity = 1.0f;
+	renderBlur(shader, dof_fbo);
+
+	Camera* camera = Camera::current;
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_dof");
+		shader->enable();
+		shader->setUniform("u_outFocus_texture", dof_fbo->color_textures[0], 1);
+		shader->setUniform("u_depth_texture", depth_buffer, 2);
+		shader->setUniform("u_focal_distance", fx_focal_distance);
+		shader->setUniform("u_min_distance", fx_dof_min);
+		shader->setUniform("u_max_distance", fx_dof_max);
+		shader->setUniform("u_camera_nearfar", vec2(camera->near_plane, camera->far_plane));
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
+
 }
 
 void SCN::Renderer::renderBlur(GFX::Shader* shader, GFX::FBO* bufferIN)
@@ -2437,7 +2491,6 @@ void SCN::Renderer::renderDownsample(GFX::Shader* shader)
 		{
 			fbo = bloom_fbo[i] = new GFX::FBO();
 			fbo->create(width, height, 1, GL_RGB, GL_HALF_FLOAT, false);
-			CORE::BaseApplication::instance->window_resized = false;
 		}
 
 		fbo->bind();

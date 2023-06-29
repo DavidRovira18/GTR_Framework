@@ -130,6 +130,7 @@ namespace SCN {
 		sIrradianceHeader irradiance_cache_info;
 		float irradiance_multiplier = 1.0f;
 		bool enable_irradiance = false;
+		bool enable_trilinear_interpolation = true;
 
 		//reflection
 		GFX::FBO* reflections_fbo = nullptr;

@@ -2042,9 +2042,9 @@ void main()
 	decal_space = decal_space + vec3(0.5);
 
 	//if outside of the volume
-	if( decal_space.x < -0.5 || decal_space.x > 0.5 ||
-    decal_space.y < -0.5 || decal_space.y > 0.5 ||
-    decal_space.z < -0.5 || decal_space.z > 0.5 )
+	if( decal_space.x < -1 || decal_space.x > 1 ||
+    decal_space.y < -1 || decal_space.y > 1 ||
+    decal_space.z < -1 || decal_space.z > 1 )
 		discard;
 
 	vec4 color = texture(u_color_texture, decal_space.xy);
@@ -2055,8 +2055,8 @@ void main()
 	vec3 normal = texture(u_normal_texture, uv).rgb;
 	vec3 extra = texture(u_extra_texture, uv).rgb;
 
-	NormalColor = vec4(normal, u_metalness);  //TODO: store metallness
-	ExtraColor = vec4(extra, u_roughness);	//TODO: store roughness
+	NormalColor = vec4(vec3(0.0), u_metalness);  
+	ExtraColor = vec4(vec3(0.0), u_roughness);	
 }
 
 \gamma.fs
@@ -2180,6 +2180,7 @@ uniform int u_num_probes;
 
 uniform float u_irr_normal_distance;
 uniform vec3 u_irr_delta;
+uniform bool u_trilinear_interpolation;
 
 uniform sampler2D u_probes_texture;
 
@@ -2313,7 +2314,16 @@ void main()
 	vec3 factors = irr_norm_pos - local_indices; 
 
 	
-	vec3 irradiance = trilinearInterpolation(local_indices, factors, N) * albedo.xyz;
+	vec3 irradiance = albedo.xyz;
+	
+	if(u_trilinear_interpolation)
+	{
+		irradiance *= trilinearInterpolation(local_indices, factors, N) ;
+	}else{
+		irradiance *= computeIrr(local_indices, N) ;
+
+	}
+	
 
 	FragColor = vec4(irradiance, 1.0);
 }

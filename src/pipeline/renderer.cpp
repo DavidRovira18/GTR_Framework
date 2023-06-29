@@ -1441,6 +1441,7 @@ void SCN::Renderer::applyIrradiance()
 	shader->setTexture("u_probes_texture", probes_texture, 5);
 
 	shader->setUniform("u_irr_normal_distance", 5.0f);
+	shader->setUniform("u_trilinear_interpolation", enable_trilinear_interpolation);
 
 	//compute the vector from one corner to the other
 	vec3 delta = (irradiance_cache_info.end - irradiance_cache_info.start);
@@ -1816,6 +1817,7 @@ void Renderer::showUI()
 			if (ImGui::TreeNode("Irradiance"))
 			{
 				ImGui::Checkbox("Render with irradiance", &enable_irradiance);
+				ImGui::Checkbox("Trilinear Interpolation", &enable_trilinear_interpolation);
 
 				if (ImGui::Button("Update Probes"))
 					capture_irradiance = true;

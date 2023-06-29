@@ -674,7 +674,7 @@ void SCN::Renderer::renderMultipass(GFX::Shader* shader, RenderCall* rc)
 		sReflectionProbe* enviorment = getClosestReflectionProbe(rc->model);
 
 		if(!capture_reflectance)
-			shader->setTexture("u_environment", (enviorment) ? enviorment->cubemap : skybox_cubemap, 9);
+			shader->setTexture("u_environment", (enviorment && use_probes) ? enviorment->cubemap : skybox_cubemap, 9);
 		
 		shader->setUniform("u_enable_reflections", capture_reflectance ? false : enable_reflections);
 		//do the draw call that renders the mesh into the screen
@@ -1757,7 +1757,20 @@ void Renderer::showUI()
 				if (ImGui::TreeNode("Reflections"))
 				{
 					ImGui::Checkbox("Enable reflections", &enable_reflections);
-					ImGui::Checkbox("Show reflection cache", &show_reflection_probes); 
+
+					if (enable_reflections)
+					{
+						ImGui::Checkbox("Use skybox", &use_skybox);
+						ImGui::Checkbox("Use probes", &use_probes);
+						if (use_probes)
+							use_skybox = false;
+						if (use_skybox)
+							use_probes = false;
+
+						if (!use_probes && !use_skybox)
+							enable_reflections = false;
+						ImGui::Checkbox("Show reflection cache", &show_reflection_probes); 
+					}
 
 					if (ImGui::Button("Update Reflections"))
 						capture_reflectance = true;

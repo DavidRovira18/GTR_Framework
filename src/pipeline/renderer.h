@@ -153,6 +153,8 @@ namespace SCN {
 		bool enable_normalmap = false;
 
 		bool enable_reflections = false;
+		bool use_skybox = true;
+		bool use_probes = false;
 		float reflections_factor = 0.0f;
 		bool enable_fresnel = false;
 

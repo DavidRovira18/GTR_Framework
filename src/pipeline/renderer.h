@@ -169,6 +169,9 @@ namespace SCN {
 		GFX::FBO* postFX_bufferIN = nullptr;
 		GFX::FBO* postFX_bufferOUT = nullptr;
 		GFX::FBO* postFX_bufferTEMP = nullptr;
+			//FXAA
+			bool enable_FXAA = false;
+
 			//ColorCorrection
 			bool enable_color_correction = false;	
 
@@ -204,7 +207,7 @@ namespace SCN {
 			//DoF
 			bool enable_DoF = false;
 			GFX::FBO* dof_fbo = nullptr;
-			float fx_focal_distance = 30.0f;
+			float fx_focal_distance = 0.5f;
 			float fx_dof_min = 1.0f;
 			float fx_dof_max = 3.0f;
 
@@ -329,6 +332,7 @@ namespace SCN {
 
 		//POSTFX
 		void renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth_buffer);
+		void renderFXAA(GFX::Shader* shader);
 		void renderColorCorrection(GFX::Shader* shader);
 		void renderVigneting(GFX::Shader* shader);
 		void renderGrain(GFX::Shader* shader);

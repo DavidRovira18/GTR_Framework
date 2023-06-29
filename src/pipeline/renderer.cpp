@@ -1850,6 +1850,11 @@ void Renderer::showUI()
 
 			if (ImGui::TreeNode("PostFX"))
 			{
+				if (ImGui::TreeNode("FXAA"))
+				{
+					ImGui::Checkbox("Enable FXAA", &enable_FXAA);
+					ImGui::TreePop();
+				}
 				if(ImGui::TreeNode("Color Correction"))
 				{
 					ImGui::Checkbox("Enable Color Correction", &enable_color_correction);
@@ -1887,10 +1892,9 @@ void Renderer::showUI()
 					if (enable_lens_distortion)
 					{
 						static int current = current_distortion;
-						ImGui::Combo("Type", &(int)current, "PINCUSHION\0BARREL\0CHROMATIC\0");
+						ImGui::Combo("Type", &(int)current, "PINCUSHION\0CHROMATIC\0");
 						if (current == 0) current_distortion = eDistortionType::PINCUSHION;
-						if (current == 1) current_distortion = eDistortionType::BARREL;
-						if (current == 2) current_distortion = eDistortionType::CHROMATIC;
+						if (current == 1) current_distortion = eDistortionType::CHROMATIC;
 						if (current_distortion != eDistortionType::CHROMATIC) ImGui::SliderFloat("Distorion Intensity", &fx_distortion, 0.0, 5.0);
 					}
 					ImGui::TreePop();
@@ -2277,6 +2281,9 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 		color_buffer->toViewport();	
 	postFX_bufferIN->unbind();
 
+	if (enable_FXAA)
+		renderFXAA(shader);
+
 	if (enable_color_correction)
 		renderColorCorrection(shader);
 	
@@ -2327,6 +2334,21 @@ void SCN::Renderer::renderPostFX(GFX::Texture* color_buffer, GFX::Texture* depth
 		renderTonemapper(postFX_bufferIN->color_textures[0]);
 	else
 		renderGamma(postFX_bufferIN->color_textures[0]);
+}
+
+void SCN::Renderer::renderFXAA(GFX::Shader* shader)
+{
+	float width = postFX_bufferIN->color_textures[0]->width;
+	float height = postFX_bufferIN->color_textures[0]->height;
+	postFX_bufferOUT->bind();
+		shader = GFX::Shader::Get("fx_fxaa");
+		shader->enable();
+		shader->setUniform("u_viewportSize", vec2(width, height));
+		shader->setUniform("u_iViewportSize", vec2(1.0/width, 1.0/height));
+		postFX_bufferIN->color_textures[0]->toViewport(shader);
+	postFX_bufferOUT->unbind();
+
+	std::swap(postFX_bufferIN, postFX_bufferOUT);
 }
 
 void SCN::Renderer::renderColorCorrection(GFX::Shader* shader)
